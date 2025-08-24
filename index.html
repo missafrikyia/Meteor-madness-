@@ -9,21 +9,29 @@
   #wrap{max-width:800px;margin:0 auto;padding:8px}
   canvas{width:100%;height:auto;border:2px solid #1e1e1e;background:radial-gradient(ellipse at center,#050815 0%,#000 70%)}
   .hud{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin:8px 0}
-  .tag{background:#111;border:1px solid #333;border-radius:8px;padding:6px 10px}
+  .tag{background:#111;border:1px solid #333;border-radius:8px;padding:6px 10px;display:flex;gap:6px;align-items:center}
   .btns{margin:8px 0;display:flex;gap:8px;flex-wrap:wrap}
   button{background:#1a1f2e;color:#fff;border:1px solid #3a4a7a;border-radius:10px;padding:10px 14px;cursor:pointer}
   button:active{transform:translateY(1px)}
   .card{margin:10px 0;padding:10px;border:1px solid #333;border-radius:10px;background:#0b0f18}
+  .lang{display:flex;gap:8px;margin:6px 0}
 </style>
 </head>
 <body>
 <div id="wrap">
   <h2>Meteor Madness: Ants to the Rescue 🐜☄️</h2>
 
+  <!-- Sélecteur de langue -->
+  <div class="lang">
+    <button onclick="setLang('fr')">🇫🇷 Français</button>
+    <button onclick="setLang('en')">🇬🇧 English</button>
+    <button onclick="setLang('ln')">🇨🇩 Lingála</button>
+  </div>
+
   <div class="hud">
-    <div class="tag">Vies: <span id="lives">3</span></div>
-    <div class="tag">Score: <span id="score">0</span></div>
-    <div class="tag">Niveau: <span id="level">1</span></div>
+    <div class="tag"><span id="livesLabel">Vies</span>: <span id="lives">3</span></div>
+    <div class="tag"><span id="scoreLabel">Score</span>: <span id="score">0</span></div>
+    <div class="tag"><span id="levelLabel">Niveau</span>: <span id="level">1</span></div>
   </div>
 
   <canvas id="game" width="800" height="500"></canvas>
@@ -36,15 +44,84 @@
   </div>
 
   <div class="card" id="fact" hidden></div>
-
-  <div class="card">
-    <b>Contrôles :</b> Espace/Tap = Tir • B = Bouclier (2 s) • Fusée = attaque spéciale (cooldown) • Évitez que les astéroïdes touchent la Terre !
-    <br/>Cartes NASA s’affichent à chaque montée de niveau (Apophis, DART, Bennu).
+  <div class="card" id="controlsCard">
+    <b>Contrôles : Espace/Tap = Tir • B = Bouclier (2 s) • Fusée = Attaque spéciale • Évitez que les astéroïdes touchent la Terre !</b>
   </div>
 </div>
 
 <script>
 (() => {
+  // ====== I18N ======
+  const texts = {
+    fr: {
+      lives: "Vies",
+      score: "Score",
+      level: "Niveau",
+      controls: "Contrôles : Espace/Tap = Tir • B = Bouclier (2 s) • Fusée = Attaque spéciale • Évitez que les astéroïdes touchent la Terre !",
+      facts: {
+        1: "Apophis passera très près de la Terre en 2029.",
+        2: "En 2022, la mission DART a dévié l’orbite de Dimorphos.",
+        3: "OSIRIS-REx a rapporté des échantillons de Bennu en 2023."
+      },
+      rocketReadyPrefix: "Fusée prête dans",
+      victory: "Victoire ! Fourmis gardiennes de la Terre 🐜🌍",
+      gameOver: "Game Over 💥",
+      rocketImpact: (n)=>`Impact DART 💥 (${n} détruit${n>1?'s':''})`
+    },
+    en: {
+      lives: "Lives",
+      score: "Score",
+      level: "Level",
+      controls: "Controls: Space/Tap = Fire • B = Shield (2s) • Rocket = Special attack • Don’t let asteroids hit Earth!",
+      facts: {
+        1: "Apophis will pass very close to Earth in 2029.",
+        2: "In 2022, NASA’s DART mission changed Dimorphos’ orbit.",
+        3: "OSIRIS-REx returned samples from Bennu in 2023."
+      },
+      rocketReadyPrefix: "Rocket ready in",
+      victory: "Victory! Ant Guardians of Earth 🐜🌍",
+      gameOver: "Game Over 💥",
+      rocketImpact: (n)=>`DART impact 💥 (${n} destroyed)`
+    },
+    ln: {
+      lives: "Bomoi",
+      score: "Score",
+      level: "Niveau",
+      controls: "Kontrol: Espace/Tap = Kobɛta (TIR) • B = Bouclier (2 s) • Rokete = Atake Spécial • Kobatela Mabele na ba asteroïde!",
+      facts: {
+        1: "Apophis akoleka pene ya Mabelé na 2029.",
+        2: "Na 2022, mission DART ya NASA ebongoli orbit ya Dimorphos.",
+        3: "OSIRIS-REx ezongisi sample ya Bennu na 2023."
+      },
+      rocketReadyPrefix: "Rokete ekoya lisusu na",
+      victory: "Elonga! Bafúni ya Mabelé 🐜🌍",
+      gameOver: "Game Over 💥",
+      rocketImpact: (n)=>`Impact DART 💥 (${n} ebebisami)`
+    }
+  };
+  let currentLang = "fr";
+
+  function applyLang(){
+    const t = texts[currentLang];
+    document.getElementById('livesLabel').textContent = t.lives;
+    document.getElementById('scoreLabel').textContent = t.score;
+    document.getElementById('levelLabel').textContent = t.level;
+    document.getElementById('controlsCard').innerHTML = "<b>"+t.controls+"</b>";
+    // boutons (facultatif) — on laisse tels quels pour simplicité
+  }
+  function setLang(lang){
+    currentLang = texts[lang] ? lang : "fr";
+    applyLang();
+    // rafraîchir éventuel texte de carte déjà affiché
+    const factBox = document.getElementById('fact');
+    if (!factBox.hidden) {
+      const lvl = parseInt(document.getElementById('level').textContent||"1",10);
+      factBox.textContent = texts[currentLang].facts[lvl] || "";
+    }
+  }
+  window.setLang = setLang; // pour les boutons du HTML
+  // ====== FIN I18N ======
+
   // --- CONFIG ---
   const canvas = document.getElementById('game');
   const c = canvas.getContext('2d');
@@ -65,14 +142,8 @@
   let lastTime = 0;
   let usedShieldOnce = false;
 
-  const facts = {
-    1: "Apophis passera très près de la Terre en 2029.",
-    2: "En 2022, la mission DART a dévié l’orbite de Dimorphos.",
-    3: "OSIRIS-REx a rapporté des échantillons de Bennu en 2023."
-  };
-
   function showFact(lvl){
-    const txt = facts[lvl] || "";
+    const txt = (texts[currentLang].facts && texts[currentLang].facts[lvl]) || "";
     fact.textContent = txt;
     fact.hidden = !txt;
     setTimeout(()=>{ fact.hidden = true; }, 3000);
@@ -128,6 +199,11 @@
     rocket.cooldown = 8; // recharge 8 s
   }
 
+  function showBanner(text){
+    fact.textContent = text;
+    fact.hidden = false;
+  }
+
   function explodeAt(x,y){
     const R = 60; // rayon d’explosion
     let destroyed = 0;
@@ -140,7 +216,10 @@
       return true;
     });
     uiScore.textContent = score;
-    showBanner(`Impact DART 💥 (${destroyed} détruit${destroyed>1?'s':''})`);
+    const msg = texts[currentLang].rocketImpact
+      ? texts[currentLang].rocketImpact(destroyed)
+      : `DART impact 💥 (${destroyed})`;
+    showBanner(msg);
     setTimeout(()=>{ fact.hidden = true; }, 1000);
   }
 
@@ -152,10 +231,11 @@
 
   window.addEventListener('keydown', (e)=>{
     if (e.code === 'Space') { e.preventDefault(); fire(); }
-    if (e.key.toLowerCase() === 'b') { activateShield(); }
-    if (e.key.toLowerCase() === 'r') { reset(); }
+    if (e.key && e.key.toLowerCase() === 'b') { activateShield(); }
+    if (e.key && e.key.toLowerCase() === 'r') { reset(); }
   });
   // Tap anywhere on canvas to fire (mobile)
+  const canvas = document.getElementById('game');
   canvas.addEventListener('pointerdown', fire, {passive:true});
 
   // --- LOOP ---
@@ -250,7 +330,7 @@
         if (level === 3) usedShieldOnce = false;
       } else {
         running = false;
-        showBanner("Victoire ! Fourmis gardiennes de la Terre 🐜🌍");
+        showBanner(texts[currentLang].victory);
       }
     }
 
@@ -258,7 +338,7 @@
 
     if (lives <= 0 && running){
       running = false;
-      showBanner("Game Over 💥");
+      showBanner(texts[currentLang].gameOver);
     }
   }
 
@@ -318,10 +398,11 @@
       c.fillRect(rocket.x-3, rocket.y+10, 6, 8);   // flamme
       c.restore();
     }
-    // Indicateur cooldown fusée
+    // Indicateur cooldown fusée (localisé)
     c.save();
     c.fillStyle = "#fff";
-    c.fillText(`Fusée prête dans: ${rocket.cooldown.toFixed(1)}s`, 10, 18);
+    const cdText = `${texts[currentLang].rocketReadyPrefix}: ${rocket.cooldown.toFixed(1)}s`;
+    c.fillText(cdText, 10, 18);
     c.restore();
 
     // Asteroids
@@ -343,11 +424,8 @@
     }
   }
 
-  function showBanner(text){
-    fact.textContent = text;
-    fact.hidden = false;
-  }
-
+  // Init
+  applyLang();
   reset();
   requestAnimationFrame(loop);
   // fallback (sécurité mobile)
