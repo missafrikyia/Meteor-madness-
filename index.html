@@ -87,7 +87,7 @@
       lives: "Bomoi",
       score: "Score",
       level: "Niveau",
-      controls: "Kontrol: Espace/Tap = Kobɛta (TIR) • B = Bouclier (2 s) • Rokete = Atake Spécial • Kobatela Mabele na ba asteroïde!",
+      controls: "Kontrol: Espace/Tap = Kobɛta (TIR) • B = Bouclier (2 s) • Rokete = Atake Spécial • Kobatela Mabelé na ba asteroïde!",
       facts: {
         1: "Apophis akoleka pene ya Mabelé na 2029.",
         2: "Na 2022, mission DART ya NASA ebongoli orbit ya Dimorphos.",
@@ -107,12 +107,10 @@
     document.getElementById('scoreLabel').textContent = t.score;
     document.getElementById('levelLabel').textContent = t.level;
     document.getElementById('controlsCard').innerHTML = "<b>"+t.controls+"</b>";
-    // boutons (facultatif) — on laisse tels quels pour simplicité
   }
   function setLang(lang){
     currentLang = texts[lang] ? lang : "fr";
     applyLang();
-    // rafraîchir éventuel texte de carte déjà affiché
     const factBox = document.getElementById('fact');
     if (!factBox.hidden) {
       const lvl = parseInt(document.getElementById('level').textContent||"1",10);
@@ -123,7 +121,7 @@
   // ====== FIN I18N ======
 
   // --- CONFIG ---
-  const canvas = document.getElementById('game');
+  const canvas = document.getElementById('game');      // << unique déclaration
   const c = canvas.getContext('2d');
   const uiLives = document.getElementById('lives');
   const uiScore = document.getElementById('score');
@@ -235,7 +233,6 @@
     if (e.key && e.key.toLowerCase() === 'r') { reset(); }
   });
   // Tap anywhere on canvas to fire (mobile)
-  const canvas = document.getElementById('game');
   canvas.addEventListener('pointerdown', fire, {passive:true});
 
   // --- LOOP ---
@@ -266,7 +263,6 @@
     if (rocket.cooldown > 0) { rocket.cooldown -= dt; if (rocket.cooldown < 0) rocket.cooldown = 0; }
     if (rocket.active){
       rocket.y += rocket.vy * dt;
-      // collision fusée/astéroïde
       for (const a of asteroids){
         const dx = a.x - rocket.x, dy = a.y - rocket.y;
         if (dx*dx + dy*dy < (a.r+10)*(a.r+10)){
@@ -393,9 +389,9 @@
     if (rocket.active){
       c.save();
       c.fillStyle = "#ffd54d";
-      c.fillRect(rocket.x-4, rocket.y-10, 8, 20);  // corps
+      c.fillRect(rocket.x-4, rocket.y-10, 8, 20);
       c.fillStyle = "#ff6e40";
-      c.fillRect(rocket.x-3, rocket.y+10, 6, 8);   // flamme
+      c.fillRect(rocket.x-3, rocket.y+10, 6, 8);
       c.restore();
     }
     // Indicateur cooldown fusée (localisé)
@@ -415,7 +411,6 @@
       c.beginPath();
       c.arc(a.x, a.y, a.r, 0, Math.PI*2);
       c.fill();
-      // HP pips
       c.fillStyle = "#fff";
       for (let i=0;i<a.hp;i++){
         c.fillRect(a.x- a.r + 4 + i*6, a.y- a.r - 10, 4, 4);
