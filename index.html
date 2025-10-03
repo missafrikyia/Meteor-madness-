@@ -1,430 +1,176 @@
 <!doctype html>
 <html lang="fr">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
 <title>Meteor Madness: Ants to the Rescue</title>
 <style>
-  html,body{margin:0;background:#000;color:#fff;font-family:system-ui,Arial}
-  #wrap{max-width:800px;margin:0 auto;padding:8px}
-  canvas{width:100%;height:auto;border:2px solid #1e1e1e;background:radial-gradient(ellipse at center,#050815 0%,#000 70%)}
-  .hud{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin:8px 0}
-  .tag{background:#111;border:1px solid #333;border-radius:8px;padding:6px 10px;display:flex;gap:6px;align-items:center}
-  .btns{margin:8px 0;display:flex;gap:8px;flex-wrap:wrap}
+  body{margin:0;background:#000;color:#fff;font-family:Arial, sans-serif}
+  #wrap{max-width:900px;margin:0 auto;padding:8px}
+  canvas{width:100%;height:auto;border:2px solid #333;background:radial-gradient(circle at center,#050815 0%,#000 70%)}
+  .hud{display:flex;gap:12px;margin:10px 0}
+  .tag{background:#111;border:1px solid #333;border-radius:8px;padding:6px 12px}
+  .btns{margin:8px 0;display:flex;gap:8px}
   button{background:#1a1f2e;color:#fff;border:1px solid #3a4a7a;border-radius:10px;padding:10px 14px;cursor:pointer}
   button:active{transform:translateY(1px)}
   .card{margin:10px 0;padding:10px;border:1px solid #333;border-radius:10px;background:#0b0f18}
-  .lang{display:flex;gap:8px;margin:6px 0}
 </style>
 </head>
 <body>
 <div id="wrap">
   <h2>Meteor Madness: Ants to the Rescue 🐜☄️</h2>
 
-  <!-- Sélecteur de langue -->
-  <div class="lang">
-    <button onclick="setLang('fr')">🇫🇷 Français</button>
-    <button onclick="setLang('en')">🇬🇧 English</button>
-    <button onclick="setLang('ln')">🇨🇩 Lingála</button>
-  </div>
-
   <div class="hud">
-    <div class="tag"><span id="livesLabel">Vies</span>: <span id="lives">3</span></div>
-    <div class="tag"><span id="scoreLabel">Score</span>: <span id="score">0</span></div>
-    <div class="tag"><span id="levelLabel">Niveau</span>: <span id="level">1</span></div>
+    <div class="tag">❤️ Vies: <span id="lives">3</span></div>
+    <div class="tag">⭐ Score: <span id="score">0</span></div>
+    <div class="tag">🌍 Niveau: <span id="level">1</span></div>
   </div>
 
   <canvas id="game" width="800" height="500"></canvas>
 
   <div class="btns">
-    <button id="fireBtn">TIR 🔴 (Espace / Tap)</button>
+    <button id="fireBtn">Tirer 🔴 (Espace)</button>
     <button id="shieldBtn">Bouclier 🛡️ (B)</button>
-    <button id="rocketBtn">Fusée 🚀 (Spécial)</button>
     <button id="resetBtn">Rejouer ↻</button>
   </div>
 
   <div class="card" id="fact" hidden></div>
-  <div class="card" id="controlsCard">
-    <b>Contrôles : Espace/Tap = Tir • B = Bouclier (2 s) • Fusée = Attaque spéciale • Évitez que les astéroïdes touchent la Terre !</b>
+
+  <div class="card">
+    <b>Contrôles :</b> Tirer (Espace) • Bouclier (B) • Rejouer (R).  
+    <br/>But : empêcher que l’astéroïde frappe la Terre !
+  </div>
+
+  <div class="card" id="simPanel">
+    <b>Simulation NASA</b><br/>
+    Taille (m): <input type="range" id="diam" min="50" max="500" value="200">
+    Δv déviation (mm/s): <input type="range" id="dv" min="0" max="5" step="0.1" value="1">
+    <button id="applyMitigation">Tester la déviation</button>
+    <div id="simOut"></div>
   </div>
 </div>
 
 <script>
 (() => {
-  // ====== I18N ======
-  const texts = {
-    fr: {
-      lives: "Vies",
-      score: "Score",
-      level: "Niveau",
-      controls: "Contrôles : Espace/Tap = Tir • B = Bouclier (2 s) • Fusée = Attaque spéciale • Évitez que les astéroïdes touchent la Terre !",
-      facts: {
-        1: "Apophis passera très près de la Terre en 2029.",
-        2: "En 2022, la mission DART a dévié l’orbite de Dimorphos.",
-        3: "OSIRIS-REx a rapporté des échantillons de Bennu en 2023."
-      },
-      rocketReadyPrefix: "Fusée prête dans",
-      victory: "Victoire ! Fourmis gardiennes de la Terre 🐜🌍",
-      gameOver: "Game Over 💥",
-      rocketImpact: (n)=>`Impact DART 💥 (${n} détruit${n>1?'s':''})`
-    },
-    en: {
-      lives: "Lives",
-      score: "Score",
-      level: "Level",
-      controls: "Controls: Space/Tap = Fire • B = Shield (2s) • Rocket = Special attack • Don’t let asteroids hit Earth!",
-      facts: {
-        1: "Apophis will pass very close to Earth in 2029.",
-        2: "In 2022, NASA’s DART mission changed Dimorphos’ orbit.",
-        3: "OSIRIS-REx returned samples from Bennu in 2023."
-      },
-      rocketReadyPrefix: "Rocket ready in",
-      victory: "Victory! Ant Guardians of Earth 🐜🌍",
-      gameOver: "Game Over 💥",
-      rocketImpact: (n)=>`DART impact 💥 (${n} destroyed)`
-    },
-    ln: {
-      lives: "Bomoi",
-      score: "Score",
-      level: "Niveau",
-      controls: "Kontrol: Espace/Tap = Kobɛta (TIR) • B = Bouclier (2 s) • Rokete = Atake Spécial • Kobatela Mabelé na ba asteroïde!",
-      facts: {
-        1: "Apophis akoleka pene ya Mabelé na 2029.",
-        2: "Na 2022, mission DART ya NASA ebongoli orbit ya Dimorphos.",
-        3: "OSIRIS-REx ezongisi sample ya Bennu na 2023."
-      },
-      rocketReadyPrefix: "Rokete ekoya lisusu na",
-      victory: "Elonga! Bafúni ya Mabelé 🐜🌍",
-      gameOver: "Game Over 💥",
-      rocketImpact: (n)=>`Impact DART 💥 (${n} ebebisami)`
-    }
-  };
-  let currentLang = "fr";
-
-  function applyLang(){
-    const t = texts[currentLang];
-    document.getElementById('livesLabel').textContent = t.lives;
-    document.getElementById('scoreLabel').textContent = t.score;
-    document.getElementById('levelLabel').textContent = t.level;
-    document.getElementById('controlsCard').innerHTML = "<b>"+t.controls+"</b>";
-  }
-  function setLang(lang){
-    currentLang = texts[lang] ? lang : "fr";
-    applyLang();
-    const factBox = document.getElementById('fact');
-    if (!factBox.hidden) {
-      const lvl = parseInt(document.getElementById('level').textContent||"1",10);
-      factBox.textContent = texts[currentLang].facts[lvl] || "";
-    }
-  }
-  window.setLang = setLang; // pour les boutons du HTML
-  // ====== FIN I18N ======
-
-  // --- CONFIG ---
-  const canvas = document.getElementById('game');      // << unique déclaration
+  const canvas = document.getElementById('game');
   const c = canvas.getContext('2d');
   const uiLives = document.getElementById('lives');
   const uiScore = document.getElementById('score');
   const uiLevel = document.getElementById('level');
   const fact = document.getElementById('fact');
-
   const W = canvas.width, H = canvas.height;
-  const earth = { x: W/2, y: H-40, r: 26 };
 
-  let bullets = [];
-  let asteroids = [];
-  let lives = 3, score = 0, level = 1;
-  let running = true;
-  let shield = { active:false, timer:0, cooldown:0 }; // seconds
-  let rocket = { active:false, x:0, y:0, vy:-280, cooldown:0 }; // seconds
-  let lastTime = 0;
-  let usedShieldOnce = false;
+  // --- Earth base ---
+  const earth = { x: W/2, y: H-40, r: 30 };
+  let bullets=[], asteroids=[], lives=3, score=0, level=1, running=true;
+  let shield = { active:false, timer:0, cooldown:0 };
+  let lastTime=0, usedShieldOnce=false;
 
-  function showFact(lvl){
-    const txt = (texts[currentLang].facts && texts[currentLang].facts[lvl]) || "";
-    fact.textContent = txt;
-    fact.hidden = !txt;
-    setTimeout(()=>{ fact.hidden = true; }, 3000);
-  }
+  // --- Fallback JSON intégré ---
+  const NEO_FALLBACK = [
+    { name: "Test-NEO-1", diameter_m: 120, velocity_kms: 18, miss_km: 750000, hazardous: false },
+    { name: "Test-NEO-2", diameter_m: 320, velocity_kms: 22, miss_km: 220000, hazardous: true },
+    { name: "Test-NEO-3", diameter_m: 55, velocity_kms: 12, miss_km: 50000, hazardous: false }
+  ];
+  window.NEO_LIST = NEO_FALLBACK;
 
-  function reset() {
-    lives = 3; score = 0; level = 1;
-    bullets = []; asteroids = [];
-    shield = { active:false, timer:0, cooldown:0 };
-    rocket = { active:false, x:0, y:0, vy:-280, cooldown:0 };
-    running = true; lastTime = 0; usedShieldOnce = false;
-    uiLives.textContent = lives;
-    uiScore.textContent = score;
-    uiLevel.textContent = level;
-    spawnWave();
-    showFact(1);
-  }
-
-  // --- GAMEPLAY ---
-  function spawnWave() {
-    asteroids = [];
-    const count = level === 1 ? 5 : (level === 2 ? 8 : 10);
-    for (let i=0;i<count;i++){
-      const size = level===1 ? 14 : (level===2 ? 20 : 28);
-      const hp = level===1 ? 1 : (level===2 ? 2 : 3);
-      asteroids.push({
-        x: Math.random()*W, y: -Math.random()*H - 20,
-        r: size, hp,
-        speed: (level===1? 60: (level===2? 85: 110)) * (0.75 + Math.random()*0.5), // px/s
-      });
+  // --- API NASA (optionnel si connexion)
+  async function loadNEOData(){
+    const API_KEY="DEMO_KEY"; // Remplacer par ta clé
+    const today=new Date().toISOString().slice(0,10);
+    const url=`https://api.nasa.gov/neo/rest/v1/feed?start_date=${today}&api_key=${API_KEY}`;
+    try{
+      const r=await fetch(url);
+      if(!r.ok) throw new Error("API NASA error");
+      const data=await r.json();
+      const list=[];
+      for(const day of Object.values(data.near_earth_objects)){
+        for(const o of day){
+          const d=o.estimated_diameter.meters.estimated_diameter_max;
+          const approach=o.close_approach_data?.[0];
+          list.push({
+            name:o.name,
+            diameter_m:d,
+            velocity_kms:parseFloat(approach.relative_velocity.kilometers_per_second),
+            miss_km:parseFloat(approach.miss_distance.kilometers),
+            hazardous:o.is_potentially_hazardous_asteroid
+          });
+        }
+      }
+      window.NEO_LIST=list;
+    }catch(e){
+      console.warn("NASA API down, fallback activé", e);
+      window.NEO_LIST=NEO_FALLBACK;
     }
   }
+  loadNEOData();
 
-  function fire() {
-    if (!running) return;
-    bullets.push({ x: earth.x, y: earth.y - earth.r - 4, vy: -500 });
+  // --- Core gameplay functions ---
+  function showFact(t){fact.textContent=t;fact.hidden=false;setTimeout(()=>fact.hidden=true,4000);}
+  function reset(){lives=3;score=0;level=1;bullets=[];asteroids=[];running=true;uiLives.textContent=lives;uiScore.textContent=score;uiLevel.textContent=level;spawnWave();}
+  function fire(){if(!running)return;bullets.push({x:earth.x,y:earth.y-earth.r-4,vy:-400});}
+  function activateShield(){if(shield.cooldown>0||shield.active)return;shield.active=true;shield.timer=2.0;shield.cooldown=5.0;}
+  document.getElementById('fireBtn').onclick=fire;
+  document.getElementById('shieldBtn').onclick=activateShield;
+  document.getElementById('resetBtn').onclick=reset;
+  window.addEventListener('keydown',e=>{if(e.code==="Space")fire();if(e.key.toLowerCase()==='b')activateShield();if(e.key.toLowerCase()==='r')reset();});
+  canvas.addEventListener('pointerdown',fire);
+
+  function chooseNEOforLevel(level){
+    if(!window.NEO_LIST||!NEO_LIST.length) return null;
+    const sorted=[...NEO_LIST].sort((a,b)=>(b.diameter_m*b.velocity_kms)-(a.diameter_m*a.velocity_kms));
+    return sorted[Math.min(level-1,sorted.length-1)];
   }
 
-  function activateShield() {
-    if (!running) return;
-    if (shield.cooldown > 0 || shield.active) return;
-    shield.active = true;
-    shield.timer = 2.0;      // actif 2 s
-    shield.cooldown = 5.0;   // recharge 5 s
-  }
-
-  function launchRocket(){
-    if (!running) return;
-    if (rocket.active || rocket.cooldown > 0) return;
-    rocket.active = true;
-    rocket.x = earth.x;
-    rocket.y = earth.y - earth.r - 6;
-    rocket.cooldown = 8; // recharge 8 s
-  }
-
-  function showBanner(text){
-    fact.textContent = text;
-    fact.hidden = false;
-  }
-
-  function explodeAt(x,y){
-    const R = 60; // rayon d’explosion
-    let destroyed = 0;
-    asteroids = asteroids.filter(a => {
-      const dx = a.x - x, dy = a.y - y;
-      if (dx*dx + dy*dy <= R*R){
-        a.hp -= 3; // gros dégâts "type DART"
-        if (a.hp <= 0){ score += 1; destroyed++; return false; }
-      }
-      return true;
-    });
-    uiScore.textContent = score;
-    const msg = texts[currentLang].rocketImpact
-      ? texts[currentLang].rocketImpact(destroyed)
-      : `DART impact 💥 (${destroyed})`;
-    showBanner(msg);
-    setTimeout(()=>{ fact.hidden = true; }, 1000);
-  }
-
-  // --- INPUTS ---
-  document.getElementById('fireBtn').onclick = fire;
-  document.getElementById('shieldBtn').onclick = activateShield;
-  document.getElementById('rocketBtn').onclick = launchRocket;
-  document.getElementById('resetBtn').onclick = reset;
-
-  window.addEventListener('keydown', (e)=>{
-    if (e.code === 'Space') { e.preventDefault(); fire(); }
-    if (e.key && e.key.toLowerCase() === 'b') { activateShield(); }
-    if (e.key && e.key.toLowerCase() === 'r') { reset(); }
-  });
-  // Tap anywhere on canvas to fire (mobile)
-  canvas.addEventListener('pointerdown', fire, {passive:true});
-
-  // --- LOOP ---
-  function loop(ts){
-    if (!lastTime) lastTime = ts;
-    // dt en secondes, minimum 1/60 ; clamp max
-    let dt = (ts - lastTime) / 1000;
-    if (dt <= 0) dt = 1/60;
-    if (dt > 0.033) dt = 0.033;
-    lastTime = ts;
-
-    update(dt);
-    draw();
-    if (running) requestAnimationFrame(loop);
+  function spawnWave(){
+    asteroids=[];
+    const neo=chooseNEOforLevel(level);
+    if(neo){
+      const r=Math.min(30,Math.max(12,neo.diameter_m/20));
+      asteroids.push({x:Math.random()*W,y:-100,r, hp:neo.diameter_m>250?3:neo.diameter_m>150?2:1, speed:60+Math.min(80,neo.velocity_kms*2)});
+      showFact(`${neo.name} • ${neo.diameter_m|0} m • ${neo.velocity_kms.toFixed(1)} km/s`);
+    }
   }
 
   function update(dt){
-    // Shield timers
-    if (shield.active) {
-      shield.timer -= dt;
-      if (shield.timer <= 0) shield.active = false;
-    } else if (shield.cooldown > 0) {
-      shield.cooldown -= dt;
-      if (shield.cooldown < 0) shield.cooldown = 0;
+    if(shield.active){shield.timer-=dt;if(shield.timer<=0)shield.active=false;}
+    else if(shield.cooldown>0){shield.cooldown-=dt;if(shield.cooldown<0)shield.cooldown=0;}
+    bullets.forEach(b=>b.y+=b.vy*dt); bullets=bullets.filter(b=>b.y>-20);
+    for(const a of asteroids){
+      a.y+=a.speed*dt;
+      for(const b of bullets){const dx=a.x-b.x,dy=a.y-b.y;if(dx*dx+dy*dy<(a.r+6)*(a.r+6)){a.hp--;b.y=-9999;}}
+      const dx=a.x-earth.x,dy=a.y-earth.y;if(dx*dx+dy*dy<(a.r+earth.r)*(a.r+earth.r)){if(shield.active){a.y-=30;a.speed*=0.6;}else{lives--;uiLives.textContent=lives;a.y=H+50;}}
     }
-
-    // Rocket cooldown + vol
-    if (rocket.cooldown > 0) { rocket.cooldown -= dt; if (rocket.cooldown < 0) rocket.cooldown = 0; }
-    if (rocket.active){
-      rocket.y += rocket.vy * dt;
-      for (const a of asteroids){
-        const dx = a.x - rocket.x, dy = a.y - rocket.y;
-        if (dx*dx + dy*dy < (a.r+10)*(a.r+10)){
-          explodeAt(rocket.x, rocket.y);
-          rocket.active = false;
-          break;
-        }
-      }
-      if (rocket.y < -20){ rocket.active = false; }
-    }
-
-    // Bullets
-    for (const b of bullets) {
-      if (typeof b.vy !== "number") b.vy = -500;
-      b.y += b.vy * dt;
-    }
-    bullets = bullets.filter(b => b.y > -20);
-
-    // Asteroids
-    for (const a of asteroids) {
-      a.y += a.speed * dt;
-
-      // Collision with bullets
-      for (const b of bullets) {
-        const dx = a.x - b.x, dy = a.y - b.y;
-        if (dx*dx + dy*dy < (a.r+6)*(a.r+6)) {
-          if (level < 3 || usedShieldOnce) {
-            a.hp -= 1;
-          }
-          b.y = -9999;
-        }
-      }
-
-      // Collision with earth
-      const dx = a.x - earth.x, dy = a.y - earth.y;
-      if (dx*dx + dy*dy < (a.r + earth.r)*(a.r + earth.r)) {
-        if (shield.active) {
-          a.y -= 30; a.speed *= 0.6;
-        } else {
-          lives -= 1;
-          uiLives.textContent = lives;
-          a.y = H + 50;
-        }
-      }
-    }
-
-    // Remove dead/out
-    const before = asteroids.length;
-    asteroids = asteroids.filter(a => {
-      if (a.hp <= 0) { score += 1; uiScore.textContent = score; return false; }
-      return a.y < H + 40;
-    });
-
-    // Win level?
-    if (asteroids.length === 0 && before > 0) {
-      if (level < 3) {
-        level += 1;
-        uiLevel.textContent = level;
-        spawnWave();
-        showFact(level);
-        if (level === 3) usedShieldOnce = false;
-      } else {
-        running = false;
-        showBanner(texts[currentLang].victory);
-      }
-    }
-
-    if (level === 3 && shield.active) usedShieldOnce = true;
-
-    if (lives <= 0 && running){
-      running = false;
-      showBanner(texts[currentLang].gameOver);
-    }
-  }
-
-  function drawStars(){
-    c.save();
-    for (let i=0;i<80;i++){
-      const x = (i*97)%W, y = (i*57)%H;
-      c.fillStyle = i%7===0 ? "#99aaff" : "#5560aa";
-      c.fillRect(x, y, 2, 2);
-    }
-    c.restore();
+    const before=asteroids.length;
+    asteroids=asteroids.filter(a=>{if(a.hp<=0){score++;uiScore.textContent=score;return false;}return a.y<H+40;});
+    if(asteroids.length===0&&before>0){level++;uiLevel.textContent=level;if(level<=3)spawnWave();else{running=false;showFact("Victoire ! 🌍")}}
+    if(lives<=0&&running){running=false;showFact("Game Over 💥");}
   }
 
   function draw(){
     c.clearRect(0,0,W,H);
-    drawStars();
-
-    // Earth
-    c.save();
-    c.beginPath();
-    c.arc(earth.x, earth.y, earth.r, 0, Math.PI*2);
-    c.fillStyle = "#1e9bff";
-    c.fill();
-    c.strokeStyle = "#0a3a66";
-    c.lineWidth = 3;
-    c.stroke();
-    // Base fourmi (motte)
-    c.fillStyle = "#6b4a2f";
-    c.fillRect(earth.x-35, earth.y+earth.r-6, 70, 8);
-    c.restore();
-
-    // Shield
-    if (shield.active){
-      c.save();
-      c.strokeStyle = "#58ffa4";
-      c.lineWidth = 4;
-      c.beginPath();
-      c.arc(earth.x, earth.y, earth.r+12, 0, Math.PI*2);
-      c.stroke();
-      c.restore();
-    }
-
-    // Bullets
-    c.save();
-    c.fillStyle = "#ff3b30";
-    bullets.forEach(b => {
-      c.fillRect(b.x-3, b.y-10, 6, 12);
-    });
-    c.restore();
-
-    // Rocket
-    if (rocket.active){
-      c.save();
-      c.fillStyle = "#ffd54d";
-      c.fillRect(rocket.x-4, rocket.y-10, 8, 20);
-      c.fillStyle = "#ff6e40";
-      c.fillRect(rocket.x-3, rocket.y+10, 6, 8);
-      c.restore();
-    }
-    // Indicateur cooldown fusée (localisé)
-    c.save();
-    c.fillStyle = "#fff";
-    const cdText = `${texts[currentLang].rocketReadyPrefix}: ${rocket.cooldown.toFixed(1)}s`;
-    c.fillText(cdText, 10, 18);
-    c.restore();
-
-    // Asteroids
-    for (const a of asteroids) {
-      c.save();
-      const g = c.createRadialGradient(a.x-3, a.y-3, 2, a.x, a.y, a.r);
-      g.addColorStop(0,"#c7a47a");
-      g.addColorStop(1,"#6b5136");
-      c.fillStyle = g;
-      c.beginPath();
-      c.arc(a.x, a.y, a.r, 0, Math.PI*2);
-      c.fill();
-      c.fillStyle = "#fff";
-      for (let i=0;i<a.hp;i++){
-        c.fillRect(a.x- a.r + 4 + i*6, a.y- a.r - 10, 4, 4);
-      }
-      c.restore();
-    }
+    c.fillStyle="#1e9bff";c.beginPath();c.arc(earth.x,earth.y,earth.r,0,Math.PI*2);c.fill(); // Terre
+    if(shield.active){c.strokeStyle="#58ffa4";c.lineWidth=4;c.beginPath();c.arc(earth.x,earth.y,earth.r+12,0,Math.PI*2);c.stroke();}
+    c.fillStyle="#ff3b30";bullets.forEach(b=>c.fillRect(b.x-3,b.y-10,6,12));
+    for(const a of asteroids){c.fillStyle="#a77";c.beginPath();c.arc(a.x,a.y,a.r,0,Math.PI*2);c.fill();}
   }
 
-  // Init
-  applyLang();
-  reset();
-  requestAnimationFrame(loop);
-  // fallback (sécurité mobile)
-  setInterval(()=>{ if(running){ update(1/60); draw(); } }, 1000/60);
+  function loop(ts){if(!lastTime)lastTime=ts;const dt=Math.min((ts-lastTime)/1000,0.033);lastTime=ts;update(dt);draw();if(running)requestAnimationFrame(loop);}
+  reset();requestAnimationFrame(loop);
+
+  // --- Simulation NASA (Δv simple) ---
+  document.getElementById('applyMitigation').onclick=()=>{
+    const neo=chooseNEOforLevel(level);
+    if(!neo)return;
+    const dUser=parseFloat(document.getElementById('diam').value);
+    const dv_mm_s=parseFloat(document.getElementById('dv').value);
+    const T=30*24*3600; // 30 jours
+    const dv_km_s=dv_mm_s/1e6;
+    const extra= dv_km_s*T;
+    const newMiss=neo.miss_km+extra;
+    document.getElementById('simOut').textContent=
+      `Nouvelle miss distance ≈ ${newMiss.toFixed(0)} km — ${(newMiss>0?"ÉVITÉ ✅":"TOUCHE ❌")}`;
+  };
 })();
 </script>
 </body>
