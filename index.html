@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Meteor Madness: Ants to the Rescue</title>
+<title>Meteor Madness: Ants to the Rescue 🐜☄️</title>
 <style>
   :root{
     --electric-blue:#17b0ff;
@@ -20,13 +20,31 @@
   }
   #wrap{max-width:900px;margin:0 auto;padding:12px}
   h2{margin:10px 0 8px;text-align:center}
+
+  /* Bannière APOD */
+  #banner{
+    width:100%;height:220px;border-radius:10px;margin-bottom:12px;
+    border:2px solid var(--neon-yellow);overflow:hidden;cursor:pointer;
+    position:relative;transition:transform .3s ease;
+  }
+  #banner:hover{transform:scale(1.02);}
+  #banner img{width:100%;height:100%;object-fit:cover;filter:brightness(0.92);
+    opacity:0;transform:scale(1.03);transition:opacity .6s ease, transform .8s ease}
+  #banner img.loaded{opacity:1;transform:scale(1)}
+  #banner .caption{
+    position:absolute;bottom:0;left:0;right:0;
+    background:rgba(0,0,0,0.6);padding:6px 10px;font-size:14px
+  }
+
   canvas{
     width:100%;height:auto;display:block;border-radius:12px;
     border:2px solid #1e1e1e;
     background:radial-gradient(ellipse at center,#050815 0%,#000 70%);
   }
+
   .hud{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin:8px 0;justify-content:center}
   .tag{background:rgba(0,0,0,0.6);border:1px solid #333;border-radius:8px;padding:6px 10px;display:flex;gap:6px;align-items:center}
+
   .btns{margin:8px 0;display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
   button{
     background:var(--deep-blue);color:var(--neon-yellow);
@@ -36,34 +54,32 @@
   }
   button:hover{background:var(--electric-blue);color:var(--white)}
   button:active{transform:translateY(1px)}
-  .card{margin:10px 0;padding:12px;border:1px solid #333;border-radius:10px;background:rgba(10,15,25,0.85)}
+
+  .card{
+    margin:10px 0;padding:12px;
+    border:1px solid #333;border-radius:10px;
+    background:rgba(10,15,25,0.85)
+  }
   .lang{display:flex;gap:8px;margin:6px 0;justify-content:center}
   small{opacity:.85}
   a{color:var(--electric-blue)}
-  /* APOD fade-in */
-  #apodImg{opacity:0;transition:opacity .6s ease, transform .8s ease;transform:scale(1.02)}
-  #apodImg.loaded{opacity:1;transform:scale(1)}
 </style>
 </head>
 <body>
 <div id="wrap">
   <h2>Meteor Madness: Ants to the Rescue 🐜☄️</h2>
 
+  <!-- Bannière NASA APOD -->
+  <div id="banner" onclick="openApod()">
+    <img id="apodImg" src="" alt="NASA APOD">
+    <div class="caption"><span id="apodTitle">NASA Astronomy Picture of the Day</span></div>
+  </div>
+
   <!-- Sélecteur de langue -->
   <div class="lang">
     <button onclick="setLang('fr')">🇫🇷 Français</button>
     <button onclick="setLang('en')">🇬🇧 English</button>
     <button onclick="setLang('ln')">🇨🇩 Lingála</button>
-  </div>
-
-  <!-- NASA Image of the Day (APOD) -->
-  <div class="card" id="apodCard">
-    <h3 id="apodTitle">NASA Image of the Day</h3>
-    <a id="apodLink" href="#" target="_blank" rel="noopener">
-      <img id="apodImg" src="" alt="NASA APOD" style="width:100%;border-radius:8px;margin-top:8px;">
-    </a>
-    <p id="apodDesc" style="margin-top:8px"></p>
-    <small id="apodNote">Source: NASA APOD • updates daily</small>
   </div>
 
   <!-- HUD -->
@@ -220,39 +236,43 @@
     document.getElementById('dvLabel').textContent=t.dv;
     document.getElementById('tLabel').textContent=t.t;
     document.getElementById('simNote').textContent=t.simNote;
-    // APOD labels (texte NASA; le contenu APOD reste dans la langue d'origine)
+    // APOD caption label (titre)
     document.getElementById('apodTitle').textContent=t.apodTitle;
-    document.getElementById('apodNote').textContent=t.apodNote;
-    document.getElementById('apodLink').textContent=t.apodView;
-    // Fact live message adaptation si visible
-    const factBox=document.getElementById('fact');
-    if(!factBox.hidden){
-      const lvl=parseInt(document.getElementById('level').textContent||"1",10);
-      factBox.textContent=(t.facts||{})[lvl]||factBox.textContent;
-    }
   }
   function setLang(lang){
     currentLang = texts[lang]?lang:"fr";
     applyLang();
+    // si une info "fact" est ouverte, on la réactualise pour la langue
+    const factBox=document.getElementById('fact');
+    if(!factBox.hidden){
+      const lvl=parseInt(document.getElementById('level').textContent||"1",10);
+      factBox.textContent=(texts[currentLang].facts||{})[lvl]||factBox.textContent;
+    }
   }
   window.setLang=setLang;
 
-  // ====== APOD Load ======
+  // ====== APOD Load (avec fallback local) ======
   async function loadAPOD(){
+    const imgEl = document.getElementById('apodImg');
     try{
       const r = await fetch(`${APOD_URL}?api_key=${NASA_KEY}`);
+      if(!r.ok) throw new Error("APOD HTTP "+r.status);
       const data = await r.json();
-      const img = document.getElementById('apodImg');
-      const link = document.getElementById('apodLink');
-      const desc = document.getElementById('apodDesc');
-      img.src = data.url;
-      link.href = data.hdurl || data.url || '#';
-      desc.textContent = (data.explanation || '').slice(0, 240) + (data.explanation && data.explanation.length>240 ? '...' : '');
-      img.onload = () => img.classList.add('loaded');
+      imgEl.src = data.url;
+      imgEl.onload = ()=> imgEl.classList.add('loaded');
+      document.getElementById('apodTitle').textContent = data.title || texts[currentLang].apodTitle;
+      window.apodUrl = data.hdurl || data.url || "https://apod.nasa.gov/apod/";
     }catch(e){
-      document.getElementById('apodDesc').textContent = "APOD unavailable.";
+      // Fallback image & link
+      imgEl.src = "https://apod.nasa.gov/apod/image/1901/IC405_Abolfath_3952.jpg";
+      imgEl.onload = ()=> imgEl.classList.add('loaded');
+      document.getElementById('apodTitle').textContent = "NASA Space Image (fallback)";
+      window.apodUrl = "https://apod.nasa.gov/apod/";
+      console.warn("APOD unavailable → fallback", e);
     }
   }
+  function openApod(){ if(window.apodUrl) window.open(window.apodUrl,"_blank"); }
+  window.openApod=openApod;
 
   // ====== NEO API + Fallback ======
   const NEO_FALLBACK = [
