@@ -3,203 +3,141 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Meteor Madness: Ants to the Rescue</title>
+<title>Meteor Madness: Planetary Defense Edition 🐜☄️</title>
 
-<!-- Leaflet (carte) -->
-<link
-  rel="stylesheet"
-  href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-  integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
-  crossorigin=""
-/>
-<script
-  src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-  integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
-  crossorigin=""
-></script>
+<!-- Leaflet -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="anonymous"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin="anonymous"></script>
+
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js" crossorigin="anonymous"></script>
 
 <style>
-  :root{
-    --electric-blue:#17b0ff;   /* Space Apps: Electric Blue */
-    --deep-blue:#0a1a40;       /* Space Apps: Deep Blue  */
-    --neon-yellow:#e6ff00;     /* Accent only (no backgrounds) */
-    --nasa-red:#FC3D21;
-    --ink:#0b1020;
-    --panel:#0c1326ea;
-    --text:#ffffff;
-  }
+:root{
+  --nasa-blue:#0B3D91;     /* NASA Blue */
+  --nasa-red:#FC3D21;      /* NASA Red */
+  --deep-blue:#0A1A40;     /* Deep Space Navy */
+  --accent-yellow:#FFD300; /* Solar Glow */
+  --light-gray:#F4F4F4;
+  --panel:#0c1326ea;
+  --text:#ffffff;
+}
+html,body{
+  height:100%;margin:0;color:var(--text);
+  font-family:system-ui,Segoe UI,Arial,Helvetica,sans-serif;
+  background:linear-gradient(45deg,var(--nasa-blue) 0%,var(--deep-blue) 100%);
+}
+#wrap{max-width:1150px;margin:0 auto;padding:14px}
+h1{margin:.4rem 0;color:var(--accent-yellow);text-shadow:0 0 8px rgba(255,211,0,0.4)}
+.row{display:grid;grid-template-columns:1fr;gap:12px}
+@media(min-width:1110px){.row{grid-template-columns:1.1fr .9fr}}
 
-  html,body{
-    height:100%;
-    margin:0;
-    color:var(--text);
-    font-family:system-ui,Segoe UI,Arial,Helvetica,sans-serif;
-    background:linear-gradient(45deg,var(--electric-blue) 0%,var(--deep-blue) 100%);
-  }
-  #wrap{max-width:1000px;margin:0 auto;padding:12px}
-  h1,h2{margin:.4rem 0}
-  .row{display:grid;grid-template-columns:1fr;gap:12px}
-  @media(min-width:930px){
-    .row{grid-template-columns:1.1fr .9fr}
-  }
+.card{background:var(--panel);border:1px solid #2b3b62;border-radius:12px;padding:12px;color:var(--light-gray)}
+small{opacity:.9;color:var(--light-gray)}
+a{color:var(--nasa-red);font-weight:bold;text-decoration:none}
+a:hover{text-decoration:underline;color:var(--accent-yellow)}
 
-  /* Bannière APOD */
-  .apod{
-    position:relative;
-    border-radius:14px;
-    overflow:hidden;
-    min-height:160px;
-    background:#0c1430;
-    border:1px solid #20406a;
-  }
-  .apod__img{
-    width:100%;
-    height:220px;
-    object-fit:cover;
-    display:block;
-    filter:saturate(1.05) contrast(1.05);
-    background:radial-gradient(ellipse at center,#0a1330 0%,#040819 70%);
-  }
-  .apod__bar{
-    position:absolute;left:0;right:0;bottom:0;
-    background:linear-gradient( to top, rgba(0,0,0,.65), rgba(0,0,0,0));
-    padding:10px 12px;
-    display:flex;justify-content:space-between;gap:10px;align-items:flex-end
-  }
-  .apod__title{font-weight:700}
-  .apod__link{
-    background:var(--deep-blue);
-    border:2px solid var(--neon-yellow);
-    color:var(--neon-yellow);
-    font-weight:800;
-    padding:6px 10px;border-radius:8px;
-    text-decoration:none;
-  }
+button{
+  background:var(--nasa-blue);color:var(--accent-yellow);
+  border:2px solid var(--accent-yellow);border-radius:10px;
+  padding:10px 14px;cursor:pointer;font-weight:800;
+  text-shadow:0 0 4px rgba(255,211,0,0.45);transition:.2s;
+}
+button:hover{background:var(--nasa-red);color:#fff}
+button:active{transform:translateY(1px)}
 
-  /* HUD + boutons */
-  .hud{display:flex;gap:10px;flex-wrap:wrap;margin:8px 0}
-  .tag{background:#0b0f1b;border:1px solid #31405f;border-radius:8px;padding:6px 10px}
-  .btns{display:flex;gap:8px;flex-wrap:wrap}
-  button{
-    background:var(--deep-blue); color:var(--neon-yellow);
-    border:2px solid var(--neon-yellow); border-radius:10px;
-    padding:10px 14px; cursor:pointer; font-weight:800;
-    text-shadow:0 0 5px rgba(230,255,0,0.45);
-  }
-  button:hover{background:var(--electric-blue);color:#fff}
-  button:active{transform:translateY(1px)}
+.apod{position:relative;border-radius:14px;overflow:hidden;background:#0c1430;border:2px solid var(--nasa-blue)}
+.apod__img{width:100%;height:230px;object-fit:cover;display:block;filter:saturate(1.05) contrast(1.05)}
+.apod__bar{position:absolute;left:0;right:0;bottom:0;background:linear-gradient(to top,rgba(0,0,0,.65),rgba(0,0,0,0));padding:10px 12px;display:flex;justify-content:space-between;gap:10px;align-items:flex-end}
+.apod__title{font-weight:700;color:var(--accent-yellow)}
+.apod__link{background:var(--nasa-red);border:2px solid var(--accent-yellow);color:#fff;font-weight:800;padding:6px 10px;border-radius:8px;text-decoration:none}
 
-  /* Cartes / panneaux */
-  .card{
-    background:var(--panel);
-    border:1px solid #2b3b62; border-radius:12px; padding:12px;
-  }
-  .lang{display:flex;gap:8px;margin:6px 0}
-  a{color:#89d8ff}
-  small{opacity:.88}
+#map{width:100%;height:460px;border-radius:12px;border:2px solid var(--nasa-blue);overflow:hidden}
+.legend{font-size:.9rem;background:#0b0f1bcc;padding:8px 10px;border-radius:8px;border:1px solid #31405f;color:#fff}
 
-  /* Canvas jeu */
-  canvas{
-    width:100%; height:auto; display:block;
-    background:radial-gradient(ellipse at center,#050815 0%,#000 70%);
-    border:1px solid #1e2a4e;border-radius:12px;
-  }
+canvas.game{width:100%;height:auto;display:block;background:radial-gradient(ellipse at center,#050815 0%,#000 70%);border:2px solid var(--nasa-blue);border-radius:12px}
 
-  /* Leaflet */
-  #map{width:100%;height:400px;border-radius:12px;border:1px solid #243960;overflow:hidden}
-  .legend{font-size:.9rem;background:#0b0f1bcc;padding:8px 10px;border-radius:8px;border:1px solid #31405f;color:#fff}
+.grid-2{display:grid;grid-template-columns:1fr;gap:10px}
+@media(min-width:700px){.grid-2{grid-template-columns:1fr 1fr}}
+
+.kpis{display:flex;gap:10px;flex-wrap:wrap}
+.tag{background:#0b0f1b;border:1px solid #31405f;border-radius:8px;padding:6px 10px}
+.slider-row{display:flex;gap:16px;flex-wrap:wrap;align-items:center}
+.chartbox{background:#0a1330;border:1px solid #213a6a;border-radius:10px;padding:8px}
 </style>
 </head>
 <body>
 <div id="wrap">
+  <h1>🚀 Meteor Madness: Planetary Defense Edition 🐜☄️</h1>
 
-  <h1 id="title">Meteor Madness: Ants to the Rescue 🐜☄️</h1>
-
-  <!-- LANG -->
-  <div class="lang">
-    <button onclick="setLang('fr')">🇫🇷 Français</button>
-    <button onclick="setLang('en')">🇬🇧 English</button>
-    <button onclick="setLang('ln')">🇨🇩 Lingála</button>
-  </div>
-
-  <!-- Bannière APOD -->
+  <!-- APOD -->
   <div class="apod" id="apodBox">
-    <img id="apodImg" class="apod__img" alt="NASA APOD banner (clickable)"/>
+    <img id="apodImg" class="apod__img" alt="NASA APOD"/>
     <div class="apod__bar">
       <div>
         <div class="apod__title" id="apodTitle">Astronomy Picture of the Day</div>
         <small id="apodDate"></small>
       </div>
-      <a id="apodLink" class="apod__link" href="#" target="_blank">HD</a>
+      <a id="apodLink" class="apod__link" href="#" target="_blank" rel="noopener">HD</a>
     </div>
   </div>
 
-  <div class="row" style="margin-top:10px">
-    <!-- Colonne gauche: Jeu -->
+  <div class="row" style="margin-top:12px">
+    <!-- Colonne gauche: Jeu + Simulation -->
     <div>
-      <div class="hud">
-        <div class="tag"><span id="livesLabel">Vies</span>: <span id="lives">3</span></div>
-        <div class="tag"><span id="scoreLabel">Score</span>: <span id="score">0</span></div>
-        <div class="tag"><span id="levelLabel">Niveau</span>: <span id="level">1</span></div>
+      <div class="kpis">
+        <div class="tag">Vies: <span id="lives">3</span></div>
+        <div class="tag">Score: <span id="score">0</span></div>
+        <div class="tag">Niveau: <span id="level">1</span></div>
       </div>
-
-      <canvas id="game" width="900" height="560"></canvas>
-
-      <div class="btns" style="margin-top:8px">
-        <button id="fireBtn">TIR 🔴 (Espace / Tap)</button>
+      <canvas id="game" class="game" width="900" height="560"></canvas>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">
+        <button id="fireBtn">TIR 🔴 (Espace/Tap)</button>
         <button id="shieldBtn">Bouclier 🛡️ (B)</button>
-        <button id="rocketBtn">Fusée 🚀 (Spécial)</button>
+        <button id="rocketBtn">Fusée 🚀</button>
         <button id="resetBtn">Rejouer ↻</button>
       </div>
-
       <div class="card" id="fact" hidden></div>
 
-      <!-- Panneau NASA Δv -->
-      <div class="card" id="simPanel" style="margin-top:10px">
-        <b id="simTitle">Simulation NASA (déviation Δv)</b>
-        <div id="simDesc" style="margin:6px 0 10px 0;">
-          Kinetic impactor (type DART) : petite Δv appliquée tôt = impact évité.
-        </div>
-        <div style="display:flex; gap:16px; flex-wrap:wrap; align-items:center">
-          <label>
-            <span id="diamLabel">Taille (m)</span> :
-            <input type="range" id="diam" min="50" max="800" value="200">
+      <!-- Simulation Δv / énergie / cratère / magnitude -->
+      <div class="card" style="margin-top:12px">
+        <b>Simulation type DART (Δv, énergie, cratère, magnitude)</b>
+        <div class="slider-row" style="margin-top:8px">
+          <label>Taille (m)
+            <input type="range" id="diam" min="50" max="1000" value="200">
             <span id="diamOut">200</span> m
           </label>
-          <label>
-            <span id="dvLabel">Δv (mm/s)</span> :
-            <input type="range" id="dv" min="0" max="5" step="0.1" value="1">
+          <label>Δv (mm/s)
+            <input type="range" id="dv" min="0" max="5" step="0.1" value="1.0">
             <span id="dvOut">1.0</span>
           </label>
-          <label>
-            <span id="tLabel">Temps (jours)</span> :
-            <input type="range" id="days" min="5" max="120" step="5" value="30">
+          <label>Temps (jours)
+            <input type="range" id="days" min="5" max="180" step="5" value="30">
             <span id="daysOut">30</span>
           </label>
           <button id="applyMitigation">Tester</button>
         </div>
-        <div id="simOut" style="margin-top:8px"></div>
-        <small id="simNote">Modèle éducatif: déviation ≈ Δv × temps.</small>
+        <div id="simOut" style="margin-top:8px;white-space:pre-wrap"></div>
+        <div class="grid-2" style="margin-top:8px">
+          <div class="chartbox"><canvas id="chartEnergy" height="180"></canvas></div>
+          <div class="chartbox"><canvas id="chartDeflection" height="180"></canvas></div>
+        </div>
+        <small>Modèle pédagogique. Pour publication, remplacer par Holsapple/Collins-Melosh et propagation orbitale.</small>
       </div>
     </div>
 
-    <!-- Colonne droite: Carte impact -->
+    <!-- Colonne droite: Carte + données NASA -->
     <div>
       <div class="card">
-        <b id="mapTitle">Carte d’impact (clique pour placer le point d’impact)</b>
+        <b>Carte d’impact & risques (NASA + USGS)</b>
         <div id="map" style="margin-top:8px"></div>
-        <small id="mapHint">
-          Astuce : clique sur la carte pour simuler un impact. Les cercles montrent ~diamètre de cratère et portée tsunami (si océan).
-        </small>
+        <small>Couches: OSM, USGS Topo, séismes (USGS), trajectoire Apophis 2029 (approx.). Clique pour poser un impact.</small>
       </div>
 
-      <div class="card" id="controlsCard" style="margin-top:10px">
-        <b id="controlsText">Contrôles : Espace/Tap = Tir • B = Bouclier (2 s) • Fusée = Attaque spéciale • Évitez que les astéroïdes touchent la Terre !</b>
-        <div style="margin-top:6px">
-          <a href="https://api.nasa.gov/" target="_blank">NASA APIs</a> •
-          <a href="https://ssd-api.jpl.nasa.gov/doc/cad.html" target="_blank">NEO Close-Approach Data</a> •
-          <a href="https://www.usgs.gov/" target="_blank">USGS</a>
-        </div>
+      <div class="card">
+        <b>Données NASA NEO & Apophis</b>
+        <div id="neoBox" style="margin-top:6px">Chargement…</div>
+        <small>Données: NASA JPL (NEO API, CAD), rendu éducatif.</small>
       </div>
     </div>
   </div>
@@ -207,106 +145,13 @@
 
 <script>
 /* =========================
-   I18N (FR / EN / LN)
+   CONFIG
 ========================= */
-const texts = {
-  fr:{
-    title:"Meteor Madness: Ants to the Rescue 🐜☄️",
-    lives:"Vies",score:"Score",level:"Niveau",
-    fire:"TIR 🔴 (Espace / Tap)",
-    shield:"Bouclier 🛡️ (B)",
-    rocket:"Fusée 🚀 (Spécial)",
-    reset:"Rejouer ↻",
-    controls:"Contrôles : Espace/Tap = Tir • B = Bouclier (2 s) • Fusée = Attaque spéciale • Évitez que les astéroïdes touchent la Terre !",
-    facts:{1:"Apophis passera très près de la Terre en 2029.",2:"En 2022, DART a dévié Dimorphos.",3:"OSIRIS-REx a rapporté des échantillons de Bennu en 2023."},
-    rocketReadyPrefix:"Fusée prête dans",
-    victory:"Victoire ! Fourmis gardiennes de la Terre 🐜🌍",
-    gameOver:"Game Over 💥",
-    rocketImpact:n=>`Impact DART 💥 (${n} détruit${n>1?"s":""})`,
-    simTitle:"Simulation NASA (déviation Δv)",
-    simDesc:"Kinetic impactor (type DART) : petite Δv appliquée tôt = impact évité.",
-    diam:"Taille (m)",dv:"Δv (mm/s)",t:"Temps (jours)",
-    simNote:"Modèle éducatif: déviation ≈ Δv × temps.",
-    simResult:(miss,ok)=>`Nouvelle distance de raté ≈ ${miss.toFixed(0)} km — ${ok?"ÉVITÉ ✅":"IMPACT ❌"}`,
-    impactEnergy:e=>`💥 Impact simulé : énergie ≈ ${e}`,
-    mapTitle:"Carte d’impact (clique pour placer le point d’impact)",
-    mapHint:"Astuce : clique sur la carte pour simuler un impact. Les cercles montrent ~diamètre de cratère et portée tsunami (si océan).",
-    apodUnavailable:"APOD indisponible — mode hors-ligne"
-  },
-  en:{
-    title:"Meteor Madness: Ants to the Rescue 🐜☄️",
-    lives:"Lives",score:"Score",level:"Level",
-    fire:"FIRE 🔴 (Space / Tap)",
-    shield:"Shield 🛡️ (B)",
-    rocket:"Rocket 🚀 (Special)",
-    reset:"Restart ↻",
-    controls:"Controls: Space/Tap = Fire • B = Shield (2s) • Rocket = Special • Don’t let asteroids hit Earth!",
-    facts:{1:"Apophis will pass very close to Earth in 2029.",2:"In 2022, NASA’s DART changed Dimorphos’ orbit.",3:"OSIRIS-REx returned samples from Bennu in 2023."},
-    rocketReadyPrefix:"Rocket ready in",
-    victory:"Victory! Ant Guardians of Earth 🐜🌍",
-    gameOver:"Game Over 💥",
-    rocketImpact:n=>`DART impact 💥 (${n} destroyed)`,
-    simTitle:"NASA Simulation (Δv deflection)",
-    simDesc:"Kinetic impactor (DART-like): small early Δv = avoided impact.",
-    diam:"Size (m)",dv:"Δv (mm/s)",t:"Time (days)",
-    simNote:"Educational model: deflection ≈ Δv × time.",
-    simResult:(miss,ok)=>`New miss distance ≈ ${miss.toFixed(0)} km — ${ok?"AVOIDED ✅":"IMPACT ❌"}`,
-    impactEnergy:e=>`💥 Simulated impact: energy ≈ ${e}`,
-    mapTitle:"Impact map (click to place impact)",
-    mapHint:"Tip: click the map to simulate an impact. Rings show ~crater diameter and potential tsunami reach (if ocean).",
-    apodUnavailable:"APOD unavailable — offline mode"
-  },
-  ln:{
-    title:"Meteor Madness: Bafúni na Kobikisa 🐜☄️",
-    lives:"Bomoi",score:"Score",level:"Niveau",
-    fire:"KOBƐTA 🔴 (Espace / Tap)",
-    shield:"Bouclier 🛡️ (B)",
-    rocket:"Rokete 🚀 (Spécial)",
-    reset:"Kozongela ↻",
-    controls:"Kontrol: Espace/Tap = Kobɛta • B = Bouclier (2 s) • Rokete = Atake Spécial • Kobatela Mabelé!",
-    facts:{1:"Apophis akoleka pene na 2029.",2:"Na 2022, DART ebongoli Dimorphos.",3:"OSIRIS-REx ezongisi ba samples ya Bennu na 2023."},
-    rocketReadyPrefix:"Rokete ekoya na",
-    victory:"Elonga! Bafúni ya Mabelé 🐜🌍",
-    gameOver:"Game Over 💥",
-    rocketImpact:n=>`Impact DART 💥 (${n} ebebisami)`,
-    simTitle:"Simulásio NASA (Δv ya kobengana)",
-    simDesc:"Impacteur ya DART: Δv moke liboso = koboya impact.",
-    diam:"Bonene (m)",dv:"Δv (mm/s)",t:"Mikolo",
-    simNote:"Modelo ya kelasi: kobengana ≈ Δv × ntango.",
-    simResult:(miss,ok)=>`Distance ya kobeta te ≈ ${miss.toFixed(0)} km — ${ok?"EBENGAMI ✅":"IMPACT ❌"}`,
-    impactEnergy:e=>`💥 Impact simulé: makasi ≈ ${e}`,
-    mapTitle:"Karte ya impact (koma na esika ya impact)",
-    mapHint:"Toli: kanga na karte mpo na simuler impact. Bilingo emonisa ~diamètre ya crater mpe portée ya tsunami (soki na mbu).",
-    apodUnavailable:"APOD ezangi — mode offline"
-  }
-};
-let currentLang="fr";
-function applyLang(){
-  const t=texts[currentLang];
-  document.getElementById("title").textContent=t.title;
-  document.getElementById("livesLabel").textContent=t.lives;
-  document.getElementById("scoreLabel").textContent=t.score;
-  document.getElementById("levelLabel").textContent=t.level;
-  document.getElementById("fireBtn").textContent=t.fire;
-  document.getElementById("shieldBtn").textContent=t.shield;
-  document.getElementById("rocketBtn").textContent=t.rocket;
-  document.getElementById("resetBtn").textContent=t.reset;
-  document.getElementById("controlsText").textContent=t.controls;
-  document.getElementById("simTitle").textContent=t.simTitle;
-  document.getElementById("simDesc").textContent=t.simDesc;
-  document.getElementById("diamLabel").textContent=t.diam;
-  document.getElementById("dvLabel").textContent=t.dv;
-  document.getElementById("tLabel").textContent=t.t;
-  document.getElementById("simNote").textContent=t.simNote;
-  document.getElementById("mapTitle").textContent=t.mapTitle;
-  document.getElementById("mapHint").textContent=t.mapHint;
-}
-function setLang(l){ currentLang=texts[l]?l:"fr"; applyLang(); }
+const NASA_KEY="R5ZYBmGm5IzEI3gEcYRgTFRhv97KdRf9laDdcsZj";
 
 /* =========================
-   NASA APOD banner (+ fallback)
+   APOD
 ========================= */
-const NASA_KEY="R5ZYBmGm5IzEI3gEcYRgTFRhv97KdRf9laDdcsZj"; // ta clé
 async function loadAPOD(){
   const img=document.getElementById("apodImg");
   const title=document.getElementById("apodTitle");
@@ -314,42 +159,202 @@ async function loadAPOD(){
   const link=document.getElementById("apodLink");
   try{
     const r=await fetch(`https://api.nasa.gov/planetary/apod?api_key=${NASA_KEY}`);
-    if(!r.ok) throw new Error("APOD HTTP error");
-    const data=await r.json();
-    const url=(data.media_type==="image"?data.url:null)||data.hdurl;
-    if(!url) throw new Error("no image");
-    img.src=url;
-    img.alt=data.title||"NASA APOD";
-    link.href=data.hdurl||url;
-    title.textContent=data.title||"Astronomy Picture of the Day";
-    date.textContent=data.date||"";
+    if(!r.ok) throw new Error("APOD error");
+    const d=await r.json();
+    const url=(d.media_type==="image"?d.url:null)||d.hdurl;
+    img.src=url; img.alt=d.title||"NASA APOD";
+    link.href=d.hdurl||url||"#";
+    title.textContent=d.title||"Astronomy Picture of the Day";
+    date.textContent=d.date||"";
   }catch(e){
-    // Fallback gracieux: visuel simple + texte localisé
-    img.src="data:image/svg+xml;charset=utf-8,"+encodeURIComponent(`
-      <svg xmlns='http://www.w3.org/2000/svg' width='1600' height='500'>
-        <defs>
-          <radialGradient id='g' cx='50%' cy='50%'>
-            <stop offset='0%' stop-color='#101d4a'/>
-            <stop offset='70%' stop-color='#050a1a'/>
-          </radialGradient>
-        </defs>
-        <rect width='100%' height='100%' fill='url(#g)'/>
-        <g fill='#e6ff00' font-family='Arial' font-weight='700' font-size='42'>
-          <text x='50' y='80'>NASA APOD</text>
-          <text x='50' y='135' fill='#fff' font-size='26'>${texts[currentLang].apodUnavailable}</text>
-        </g>
-        <g fill='#ffffff'>
-          <circle cx='1350' cy='120' r='3'/><circle cx='1200' cy='60' r='2'/><circle cx='1500' cy='220' r='2'/>
-        </g>
-      </svg>`);
-    title.textContent="NASA APOD";
-    date.textContent="";
-    link.href="#";
+    img.alt="APOD indisponible"; title.textContent="NASA APOD (hors-ligne)"; link.href="#";
   }
 }
 
 /* =========================
-   Jeu (canvas)
+   NEO LIST + APOPHIS
+========================= */
+async function loadNEOList(){
+  const box=document.getElementById("neoBox");
+  try{
+    const r=await fetch(`https://api.nasa.gov/neo/rest/v1/neo/browse?api_key=${NASA_KEY}`);
+    if(!r.ok) throw new Error("NEO error");
+    const data=await r.json();
+    const items=data.near_earth_objects.slice(0,6).map(n=>{
+      const diam=n.estimated_diameter.meters?.estimated_diameter_max;
+      const v=n.close_approach_data?.[0]?.relative_velocity?.kilometers_per_second;
+      const date=n.close_approach_data?.[0]?.close_approach_date_full || n.close_approach_data?.[0]?.close_approach_date || "—";
+      return `🌑 <b>${n.name}</b> — ${diam?Math.round(diam):"?"} m • ${v?Number(v).toFixed(2):"n/a"} km/s • ${date}`;
+    }).join("<br>");
+    box.innerHTML = items || "Aucun objet trouvé.";
+  }catch(e){
+    box.innerHTML="Échec chargement NEO.";
+  }
+}
+async function loadApophisCard(){
+  try{
+    const r=await fetch(`https://api.nasa.gov/neo/rest/v1/neo/99942?api_key=${NASA_KEY}`);
+    if(!r.ok) throw new Error("Apophis error");
+    const a=await r.json();
+    const name=a.name;
+    const diam=a.estimated_diameter.meters.estimated_diameter_max;
+    const ca=a.close_approach_data?.find(x=>x.close_approach_date?.startsWith("2029")) || a.close_approach_data?.[0];
+    const speed=ca?.relative_velocity?.kilometers_per_second;
+    const date=ca?.close_approach_date_full || ca?.close_approach_date;
+    const box=document.getElementById("neoBox");
+    box.innerHTML = box.innerHTML + `<div style="margin-top:10px"></div>🪐 <b>${name} (99942)</b> — ${diam?Math.round(diam):"?"} m • ${speed?Number(speed).toFixed(2):"n/a"} km/s • Passage: ${date||"—"}`;
+  }catch(e){
+    const box=document.getElementById("neoBox");
+    box.innerHTML += "<br>Apophis: erreur de chargement.";
+  }
+}
+
+/* =========================
+   NASA CAD API → Apophis 2029 (approx path)
+========================= */
+async function plotApophisApproxPath(map){
+  try{
+    const url=`https://ssd-api.jpl.nasa.gov/cad.api?des=99942&date-min=2029-04-10&date-max=2029-04-20&dist-max=0.2&sort=+time`;
+    const r=await fetch(url);
+    if(!r.ok) throw new Error("CAD error");
+    const data=await r.json();
+    const row=data.data?.[0]; if(!row) return;
+    const idx={}; data.fields.forEach((f,i)=>idx[f]=i);
+    const dist_au = parseFloat(row[idx.dist]);
+    const v_rel_kms = parseFloat(row[idx.v_rel]);
+    const t_close = row[idx.cd];
+    // Courbe illustrative: grands cercles approximatifs
+    const approxCoords = [
+      [-55,-150], [-35,-110], [-10,-60], [10,-20],
+      [25,20], [40,60], [55,120]
+    ];
+    const poly = L.polyline(approxCoords,{color:'#FFD300',weight:3,opacity:.9,dashArray:'6,6'}).addTo(map);
+    poly.bindPopup(`<b>Apophis 2029 (chemin approximatif)</b><br>v_rel ≈ ${v_rel_kms.toFixed(2)} km/s • dist_min ≈ ${dist_au.toFixed(4)} UA<br>Plus proche: ${t_close}`);
+    const mid = approxCoords[Math.floor(approxCoords.length/2)];
+    L.circleMarker(mid,{radius:6,color:'#fff',fillColor:'#FFD300',fillOpacity:1}).addTo(map).bindTooltip('Plus proche approche (approx.)');
+  }catch(e){ console.warn("CAD Apophis failed", e); }
+}
+
+/* =========================
+   USGS Earthquakes (GeoJSON)
+========================= */
+async function addUSGSEarthquakesLayer(map){
+  try{
+    const r=await fetch("https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/2.5_month.geojson");
+    const gj=await r.json();
+    L.geoJSON(gj,{
+      pointToLayer:(feat,latlng)=>L.circleMarker(latlng,{
+        radius: Math.max(3,(feat.properties.mag||2)*1.2),
+        color:'#FC3D21', fillColor:'#FC3D21', fillOpacity:0.75, weight:1
+      }).bindPopup(`<b>Séisme USGS</b><br>M ${feat.properties.mag} • ${feat.properties.place}<br>${new Date(feat.properties.time).toUTCString()}`)
+    }).addTo(map);
+  }catch(e){ console.warn("USGS quakes failed", e); }
+}
+
+/* =========================
+   Simulation (éducative)
+========================= */
+const diamEl=document.getElementById("diam");
+const dvEl=document.getElementById("dv");
+const daysEl=document.getElementById("days");
+const diamOut=document.getElementById("diamOut");
+const dvOut=document.getElementById("dvOut");
+const daysOut=document.getElementById("daysOut");
+[diamEl,dvEl,daysEl].forEach(el=>el.addEventListener("input",()=>{
+  diamOut.textContent=diamEl.value;
+  dvOut.textContent=parseFloat(dvEl.value).toFixed(1);
+  daysOut.textContent=daysEl.value;
+  simulateAndUpdateCharts(false);
+}));
+
+function formatTNT(J){
+  const tnt=4.184e9; const tons=J/tnt;
+  if(tons<1e3) return `${tons.toFixed(0)} t TNT`;
+  if(tons<1e6) return `${(tons/1e3).toFixed(1)} kt TNT`;
+  return `${(tons/1e6).toFixed(2)} Mt TNT`;
+}
+function estimate(d_m, v_kms=20, rho=3000){
+  const r=d_m/2, V=4/3*Math.PI*r**3, m=V*rho, v=v_kms*1000;
+  const E=0.5*m*v*v; // Joules
+  const crater_km = 1.161 * Math.pow(E,1/3.4) / 1000;
+  const M = 0.67*Math.log10(E) - 5.87;
+  return {E, crater_km, M};
+}
+function deflection_km(dv_mm_s, days){
+  const dv_km_s = dv_mm_s/1e6; const T = days*24*3600;
+  return dv_km_s*T; // relation linéaire simplifiée
+}
+
+let chartEnergy, chartDefl;
+function buildCharts(){
+  chartEnergy=new Chart(document.getElementById("chartEnergy"),{
+    type:'line',
+    data:{labels:[],datasets:[{label:'Énergie (Mt TNT)', data:[], tension:0.25}]},
+    options:{responsive:true,plugins:{legend:{labels:{color:'#FFD300'}}},
+      scales:{x:{title:{display:true,text:'Taille (m)',color:'#FFD300'},ticks:{color:'#FFD300'}},
+              y:{title:{display:true,text:'Mt TNT',color:'#FFD300'},ticks:{color:'#FFD300'}}}}
+  });
+  chartDefl=new Chart(document.getElementById("chartDeflection"),{
+    type:'line',
+    data:{labels:[],datasets:[{label:'Déflexion estimée (km)', data:[], tension:0.25, borderColor:'#FC3D21'}]},
+    options:{responsive:true,plugins:{legend:{labels:{color:'#FFD300'}}},
+      scales:{x:{title:{display:true,text:'Temps (jours)',color:'#FFD300'},ticks:{color:'#FFD300'}},
+              y:{title:{display:true,text:'km',color:'#FFD300'},ticks:{color:'#FFD300'}}}}
+  });
+}
+function simulateAndUpdateCharts(showText=true){
+  const d=parseFloat(diamEl.value);
+  const dv=parseFloat(dvEl.value);
+  const T=parseFloat(daysEl.value);
+  const {E,crater_km,M}=estimate(d,20,3000);
+  const miss=deflection_km(dv,T);
+  if(showText){
+    document.getElementById("simOut").textContent =
+`💥 Énergie ≈ ${formatTNT(E)}
+🌋 Cratère ≈ ${crater_km.toFixed(1)} km
+📈 Magnitude sismique ≈ ${M.toFixed(1)}
+🛰️ Déflexion estimée ≈ ${miss.toFixed(0)} km (Δv=${dv.toFixed(1)} mm/s sur ${T} j)`;
+  }
+  const sizes=[50,100,200,400,600,800,1000];
+  const energiesMt = sizes.map(s=>estimate(s).E/4.184e9/1e6);
+  chartEnergy.data.labels=sizes; chartEnergy.data.datasets[0].data=energiesMt; chartEnergy.update();
+  const Ts=[5,15,30,60,90,120,150,180];
+  const defls=Ts.map(t=>deflection_km(dv,t));
+  chartDefl.data.labels=Ts; chartDefl.data.datasets[0].data=defls; chartDefl.update();
+}
+document.getElementById("applyMitigation").onclick=()=>simulateAndUpdateCharts(true);
+
+/* =========================
+   Leaflet MAP + impact rings
+========================= */
+let map, impactMarker, craterCircle, tsunamiCircle;
+function initMap(){
+  map=L.map('map',{zoomControl:true,worldCopyJump:true}).setView([5,15],3);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap'}).addTo(map);
+  L.tileLayer('https://basemap.nationalmap.gov/arcgis/rest/services/USGSTopo/MapServer/tile/{z}/{y}/{x}',{maxZoom:19,opacity:0.6,attribution:'USGS Topo'}).addTo(map);
+  const legend=L.control({position:'topright'});
+  legend.onAdd=()=>{const d=L.DomUtil.create('div','legend'); d.innerHTML='<b>Légende</b><br>🟦 Cratère (~diam.)<br>🟨 Tsunami (si océan)<br>🟠 Trajectoire Apophis (approx.)<br>🔴 Séismes USGS (mois ≥ M2.5)'; return d;};
+  legend.addTo(map);
+  map.on('click',e=>placeImpact(e.latlng));
+  placeImpact({lat:0,lng:0});
+  addUSGSEarthquakesLayer(map);
+  plotApophisApproxPath(map);
+}
+function placeImpact(latlng){
+  const d_m=parseFloat(diamEl.value)||200;
+  const crater_km = Math.max(1, d_m/30);
+  const tsunami_km = crater_km*12;
+  if(impactMarker) map.removeLayer(impactMarker);
+  if(craterCircle) map.removeLayer(craterCircle);
+  if(tsunamiCircle) map.removeLayer(tsunamiCircle);
+  impactMarker=L.marker(latlng).addTo(map)
+    .bindPopup(`<b>Impact</b><br>${latlng.lat.toFixed(3)}, ${latlng.lng.toFixed(3)}<br>Cratère ≈ ${crater_km.toFixed(1)} km<br>Tsunami ≈ ${tsunami_km.toFixed(1)} km (si océan)`).openPopup();
+  craterCircle=L.circle(latlng,{radius:crater_km*1000,color:'#4aa3ff',fillColor:'#4aa3ff',fillOpacity:.15}).addTo(map);
+  tsunamiCircle=L.circle(latlng,{radius:tsunami_km*1000,color:'#ffee66',fillColor:'#ffee66',fillOpacity:.08,dashArray:'6,6'}).addTo(map);
+}
+
+/* =========================
+   MINI-JEU (canvas)
 ========================= */
 const canvas=document.getElementById("game");
 const c=canvas.getContext("2d");
@@ -364,11 +369,14 @@ const uiLives=document.getElementById("lives");
 const uiScore=document.getElementById("score");
 const uiLevel=document.getElementById("level");
 const fact=document.getElementById("fact");
-
 function showFactTimed(t,ms=3000){ fact.textContent=t; fact.hidden=false; setTimeout(()=>fact.hidden=true,ms); }
 function showFactLevel(lvl){
-  const t=texts[currentLang].facts?.[lvl]||"";
-  if(t) showFactTimed(t,2800);
+  const facts={
+    1:"Apophis passera très près de la Terre en 2029.",
+    2:"En 2022, DART a dévié Dimorphos.",
+    3:"OSIRIS-REx a rapporté des échantillons de Bennu en 2023."
+  };
+  const t=facts[lvl]||""; if(t) showFactTimed(t,2600);
 }
 function resetGame(){
   lives=3;score=0;level=1;bullets=[];asteroids=[];
@@ -383,10 +391,7 @@ function spawnWave(){
   for(let i=0;i<count;i++){
     const size= level===1?14 : level===2?20:26;
     const hp= level===1?1 : level===2?2:3;
-    asteroids.push({
-      x:Math.random()*W, y:-Math.random()*H-20, r:size, hp,
-      speed:(60+level*20)*(0.75+Math.random()*0.5)
-    });
+    asteroids.push({ x:Math.random()*W, y:-Math.random()*H-20, r:size, hp, speed:(60+level*20)*(0.75+Math.random()*0.5)});
   }
 }
 function fire(){ if(!running) return; bullets.push({x:earth.x,y:earth.y-earth.r-6,vy:-560}); }
@@ -400,7 +405,7 @@ function explodeAt(x,y){
     return true;
   });
   uiScore.textContent=score;
-  showFactTimed((texts[currentLang].rocketImpact?.(destroyed))||`DART impact ${destroyed}`,1200);
+  showFactTimed(`Impact cinétique 💥 (${destroyed} détruit${destroyed>1?"s":""})`,1200);
 }
 document.getElementById("fireBtn").onclick=fire;
 document.getElementById("shieldBtn").onclick=activateShield;
@@ -412,25 +417,16 @@ window.addEventListener("keydown",e=>{
   if(e.key?.toLowerCase()==="r") resetGame();
 });
 canvas.addEventListener("pointerdown",fire,{passive:true});
-
 function drawStars(){
-  for(let i=0;i<120;i++){
-    const x=(i*97)%W, y=(i*57)%H;
-    c.fillStyle = i%7===0 ? "#b9caff" : "#6a79c9";
-    c.fillRect(x,y,2,2);
-  }
+  for(let i=0;i<120;i++){ const x=(i*97)%W, y=(i*57)%H; c.fillStyle = i%7===0 ? "#b9caff" : "#6a79c9"; c.fillRect(x,y,2,2); }
 }
 function drawEarth(){
   const r=earth.r, x=earth.x, y=earth.y;
   c.save(); c.translate(x,y);
-  // halo
-  c.beginPath(); c.arc(0,0,r+11,0,Math.PI*2);
-  c.strokeStyle="rgba(120,200,255,.35)"; c.lineWidth=9; c.stroke();
-  // océan
+  c.beginPath(); c.arc(0,0,r+11,0,Math.PI*2); c.strokeStyle="rgba(120,200,255,.35)"; c.lineWidth=9; c.stroke();
   const g=c.createRadialGradient(-r*.3,-r*.35,r*.2,0,0,r);
   g.addColorStop(0,"#17b0ff"); g.addColorStop(.6,"#0a76c4"); g.addColorStop(1,"#06335e");
   c.fillStyle=g; c.beginPath(); c.arc(0,0,r,0,Math.PI*2); c.fill();
-  // continents
   earthAngle=(earthAngle+0.15/60)%(Math.PI*2); c.rotate(earthAngle); c.fillStyle="#5ac16b";
   c.beginPath();
   c.moveTo(-r*.25,-r*.15);
@@ -439,15 +435,12 @@ function drawEarth(){
   c.bezierCurveTo(-r*.20,r*.15,-r*.35,0,-r*.25,-r*.05);
   c.closePath(); c.fill();
   c.restore();
-  // base
   c.fillStyle="#6b4a2f"; c.fillRect(x-35,y+r-6,70,8);
 }
 function update(dt){
-  // timers
   if(shield.active){ shield.timer-=dt; if(shield.timer<=0) shield.active=false; }
   else if(shield.cooldown>0){ shield.cooldown-=dt; if(shield.cooldown<0) shield.cooldown=0; }
   if(rocket.cooldown>0){ rocket.cooldown-=dt; if(rocket.cooldown<0) rocket.cooldown=0; }
-
   if(rocket.active){
     rocket.y+=rocket.vy*dt;
     for(const a of asteroids){
@@ -456,18 +449,14 @@ function update(dt){
     }
     if(rocket.y<-20) rocket.active=false;
   }
-
   for(const b of bullets) b.y += b.vy*dt;
   bullets = bullets.filter(b=>b.y>-20);
-
   for(const a of asteroids){
     a.y += a.speed*dt;
-    // collisions tirs
     for(const b of bullets){
       const dx=a.x-b.x, dy=a.y-b.y;
       if(dx*dx+dy*dy < (a.r+6)*(a.r+6)){ if(level<3||usedShieldOnce) a.hp--; b.y=-9999; }
     }
-    // Terre
     const dx=a.x-earth.x, dy=a.y-earth.y;
     if(dx*dx+dy*dy < (a.r+earth.r)*(a.r+earth.r)){
       if(shield.active){ a.y-=30; a.speed*=0.6; }
@@ -478,21 +467,18 @@ function update(dt){
   asteroids=asteroids.filter(a=> (a.hp>0) && (a.y<H+40));
   if(asteroids.length===0 && before>0){
     if(level<3){ level++; uiLevel.textContent=level; spawnWave(); showFactLevel(level); if(level===3) usedShieldOnce=false; }
-    else { running=false; showFactTimed(texts[currentLang].victory,3500); }
+    else { running=false; showFactTimed("Victoire ! Fourmis gardiennes de la Terre 🐜🌍",3500); }
   }
   if(level===3 && shield.active) usedShieldOnce=true;
-  if(lives<=0 && running){ running=false; showFactTimed(texts[currentLang].gameOver,3500); }
+  if(lives<=0 && running){ running=false; showFactTimed("Game Over 💥",3500); }
 }
 function draw(){
   c.clearRect(0,0,W,H);
   drawStars(); drawEarth();
   if(shield.active){ c.save(); c.strokeStyle="#58ffa4"; c.lineWidth=4; c.beginPath(); c.arc(earth.x,earth.y,earth.r+12,0,Math.PI*2); c.stroke(); c.restore(); }
-  // bullets
   c.save(); c.fillStyle="#ff3b30"; bullets.forEach(b=>c.fillRect(b.x-3,b.y-10,6,12)); c.restore();
-  // rocket + cooldown
   if(rocket.active){ c.save(); c.fillStyle="#ffd54d"; c.fillRect(rocket.x-4,rocket.y-10,8,20); c.fillStyle="#ff6e40"; c.fillRect(rocket.x-3,rocket.y+10,6,8); c.restore(); }
-  c.save(); c.fillStyle="#fff"; c.fillText(`${texts[currentLang].rocketReadyPrefix}: ${rocket.cooldown.toFixed(1)}s`,10,18); c.restore();
-  // asteroids
+  c.save(); c.fillStyle="#fff"; c.fillText(`Fusée prête dans: ${rocket.cooldown.toFixed(1)}s`,10,18); c.restore();
   for(const a of asteroids){
     const g=c.createRadialGradient(a.x-3,a.y-3,2,a.x,a.y,a.r);
     g.addColorStop(0,"#c7a47a"); g.addColorStop(1,"#6b5136");
@@ -500,109 +486,26 @@ function draw(){
     c.fillStyle="#fff"; for(let i=0;i<a.hp;i++) c.fillRect(a.x-a.r+4+i*6, a.y-a.r-10, 4,4);
   }
 }
+let lastTime=0;
 function loop(ts){
   if(!lastTime) lastTime=ts;
   let dt=(ts-lastTime)/1000; if(dt<=0) dt=1/60; if(dt>0.033) dt=0.033;
-  lastTime=ts;
-  update(dt); draw();
-  if(running) requestAnimationFrame(loop);
-}
-
-/* =========================
-   Panneau Δv (texte + impact éducatif)
-========================= */
-const diamEl=document.getElementById("diam");
-const dvEl=document.getElementById("dv");
-const daysEl=document.getElementById("days");
-const diamOut=document.getElementById("diamOut");
-const dvOut=document.getElementById("dvOut");
-const daysOut=document.getElementById("daysOut");
-[diamEl,dvEl,daysEl].forEach(el=>el.addEventListener("input",()=>{
-  diamOut.textContent=diamEl.value;
-  dvOut.textContent=parseFloat(dvEl.value).toFixed(1);
-  daysOut.textContent=daysEl.value;
-}));
-function formatEnergyTNT(J){
-  const tnt=4.184e9; const tons=J/tnt;
-  if(tons<1e3) return `${tons.toFixed(0)} t TNT`;
-  if(tons<1e6) return `${(tons/1e3).toFixed(1)} kt TNT`;
-  return `${(tons/1e6).toFixed(2)} Mt TNT`;
-}
-function estimateImpactEnergyJ(d_m, v_kms){
-  const r=d_m/2, rho=3000, V=4/3*Math.PI*r*r*r, m=V*rho, v=v_kms*1000;
-  return 0.5*m*v*v;
-}
-function testMitigation(){
-  const t=texts[currentLang];
-  const T=parseInt(daysEl.value,10)*24*3600;
-  const dv_km_s=parseFloat(dvEl.value)/1e6;
-  const new_miss = dv_km_s * T; // distance gagnée (km)
-  const ok = new_miss>0;
-  document.getElementById("simOut").textContent=t.simResult(new_miss,ok);
-  if(!ok){
-    const eJ=estimateImpactEnergyJ(parseFloat(diamEl.value),15);
-    showFactTimed(t.impactEnergy(formatEnergyTNT(eJ)),2500);
-  }
-}
-document.getElementById("applyMitigation").onclick=testMitigation;
-
-/* =========================
-   Carte (Leaflet) + USGS Topo
-========================= */
-let map, impactMarker, craterCircle, tsunamiCircle;
-function initMap(){
-  map=L.map('map',{zoomControl:true,worldCopyJump:true}).setView([0,0],2.3);
-
-  // Base OSM
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
-    maxZoom:19, attribution:'© OpenStreetMap'
-  }).addTo(map);
-
-  // USGS Topo overlay (données USGS)
-  L.tileLayer('https://basemap.nationalmap.gov/arcgis/rest/services/USGSTopo/MapServer/tile/{z}/{y}/{x}',{
-    maxZoom:19, opacity:0.6, attribution:'USGS Topo'
-  }).addTo(map);
-
-  const legend=L.control({position:'topright'});
-  legend.onAdd=function(){
-    const d=L.DomUtil.create('div','legend');
-    d.innerHTML='<b>Legend</b><br>🟦 Crater (~diam.)<br>🟨 Tsunami reach (if ocean)';
-    return d;
-  };
-  legend.addTo(map);
-
-  function placeImpact(latlng){
-    const d_m=parseFloat(diamEl.value)||200;
-    // heuristique éducative pour rayon cratère & tsunami
-    const crater_km = Math.max(1, d_m/30);
-    const tsunami_km = crater_km*12;
-
-    if(impactMarker) map.removeLayer(impactMarker);
-    if(craterCircle) map.removeLayer(craterCircle);
-    if(tsunamiCircle) map.removeLayer(tsunamiCircle);
-
-    impactMarker=L.marker(latlng).addTo(map)
-      .bindPopup(`<b>Impact</b><br>${latlng.lat.toFixed(3)}, ${latlng.lng.toFixed(3)}<br>Crater ≈ ${crater_km.toFixed(1)} km<br>Tsunami ≈ ${tsunami_km.toFixed(1)} km (if ocean)`)
-      .openPopup();
-
-    craterCircle=L.circle(latlng,{radius:crater_km*1000,color:'#4aa3ff',fillColor:'#4aa3ff',fillOpacity:.15}).addTo(map);
-    tsunamiCircle=L.circle(latlng,{radius:tsunami_km*1000,color:'#ffee66',fillColor:'#ffee66',fillOpacity:.08, dashArray:'6,6'}).addTo(map);
-  }
-  map.on('click',e=>placeImpact(e.latlng));
-
-  // point initial (Golfe de Guinée)
-  placeImpact({lat:-15,lng:70});
+  lastTime=ts; update(dt); draw(); if(running) requestAnimationFrame(loop);
 }
 
 /* =========================
    INIT
 ========================= */
-applyLang();
-loadAPOD();
-resetGame();
-requestAnimationFrame(loop);
-setInterval(()=>{ if(running){ update(1/60); draw(); } },1000/60); // sécurité mobile
-initMap();
+function buildAll(){
+  loadAPOD();
+  loadNEOList().then(loadApophisCard);
+  buildCharts();
+  simulateAndUpdateCharts(true);
+  initMap();
+  resetGame();
+  requestAnimationFrame(loop);
+}
+buildAll();
 </script>
 </body>
 </html>
