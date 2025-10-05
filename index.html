@@ -5,77 +5,65 @@
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>Meteor Madness: Ants to the Rescue</title>
 <style>
-  /* ---- NASA Space Apps Colors ---- */
   :root{
-    --electric-blue:#17b0ff;   /* top gradient */
-    --deep-blue:#0a1a40;       /* bottom gradient */
-    --neon-yellow:#e6ff00;     /* accent only */
+    --electric-blue:#17b0ff;
+    --deep-blue:#0a1a40;
+    --neon-yellow:#e6ff00;
     --nasa-red:#FC3D21;
     --white:#FFFFFF;
   }
-
-  /* ---- Fond gradient officiel ---- */
   html,body{
-    margin:0;
-    height:100%;
+    margin:0;height:100%;
     font-family:system-ui,Arial;
     color:var(--white);
     background:linear-gradient(45deg,var(--electric-blue) 0%,var(--deep-blue) 100%);
   }
-
-  #wrap{max-width:900px;margin:0 auto;padding:10px}
-  h2{margin:10px 0 6px}
-
+  #wrap{max-width:900px;margin:0 auto;padding:12px}
+  h2{margin:10px 0 8px;text-align:center}
   canvas{
-    width:100%;
-    height:auto;
+    width:100%;height:auto;display:block;border-radius:12px;
     border:2px solid #1e1e1e;
     background:radial-gradient(ellipse at center,#050815 0%,#000 70%);
-    border-radius:12px;
-    display:block;
   }
-
-  .hud{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin:8px 0}
-  .tag{
-    background:rgba(0,0,0,0.6);
-    border:1px solid #333;border-radius:8px;
-    padding:6px 10px;display:flex;gap:6px;align-items:center
-  }
-
-  .btns{margin:8px 0;display:flex;gap:8px;flex-wrap:wrap}
+  .hud{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin:8px 0;justify-content:center}
+  .tag{background:rgba(0,0,0,0.6);border:1px solid #333;border-radius:8px;padding:6px 10px;display:flex;gap:6px;align-items:center}
+  .btns{margin:8px 0;display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
   button{
-    background:var(--deep-blue);
-    color:var(--neon-yellow);
-    border:2px solid var(--neon-yellow);
-    border-radius:10px;
-    padding:10px 14px;
-    cursor:pointer;
-    font-weight:700;
+    background:var(--deep-blue);color:var(--neon-yellow);
+    border:2px solid var(--neon-yellow);border-radius:10px;
+    padding:10px 14px;cursor:pointer;font-weight:700;
     text-shadow:0 0 5px rgba(230,255,0,0.6);
   }
   button:hover{background:var(--electric-blue);color:var(--white)}
   button:active{transform:translateY(1px)}
-
-  .card{
-    margin:10px 0;padding:12px;
-    border:1px solid #333;border-radius:10px;
-    background:rgba(10,15,25,0.85)
-  }
-  .lang{display:flex;gap:8px;margin:6px 0}
-  input[type=range]{width:160px}
+  .card{margin:10px 0;padding:12px;border:1px solid #333;border-radius:10px;background:rgba(10,15,25,0.85)}
+  .lang{display:flex;gap:8px;margin:6px 0;justify-content:center}
   small{opacity:.85}
   a{color:var(--electric-blue)}
+  /* APOD fade-in */
+  #apodImg{opacity:0;transition:opacity .6s ease, transform .8s ease;transform:scale(1.02)}
+  #apodImg.loaded{opacity:1;transform:scale(1)}
 </style>
 </head>
 <body>
 <div id="wrap">
   <h2>Meteor Madness: Ants to the Rescue 🐜☄️</h2>
 
-  <!-- Langues -->
+  <!-- Sélecteur de langue -->
   <div class="lang">
     <button onclick="setLang('fr')">🇫🇷 Français</button>
     <button onclick="setLang('en')">🇬🇧 English</button>
     <button onclick="setLang('ln')">🇨🇩 Lingála</button>
+  </div>
+
+  <!-- NASA Image of the Day (APOD) -->
+  <div class="card" id="apodCard">
+    <h3 id="apodTitle">NASA Image of the Day</h3>
+    <a id="apodLink" href="#" target="_blank" rel="noopener">
+      <img id="apodImg" src="" alt="NASA APOD" style="width:100%;border-radius:8px;margin-top:8px;">
+    </a>
+    <p id="apodDesc" style="margin-top:8px"></p>
+    <small id="apodNote">Source: NASA APOD • updates daily</small>
   </div>
 
   <!-- HUD -->
@@ -85,18 +73,18 @@
     <div class="tag"><span id="levelLabel">Niveau</span>: <span id="level">1</span></div>
   </div>
 
-  <!-- Canvas -->
+  <!-- Canvas du jeu -->
   <canvas id="game" width="900" height="560"></canvas>
 
   <!-- Boutons -->
   <div class="btns">
-    <button id="fireBtn">TIR 🔴 (Espace / Tap)</button>
-    <button id="shieldBtn">Bouclier 🛡️ (B)</button>
-    <button id="rocketBtn">Fusée 🚀 (Spécial)</button>
-    <button id="resetBtn">Rejouer ↻</button>
+    <button id="fireBtn">TIR 🔴</button>
+    <button id="shieldBtn">BOUCLIER 🛡️</button>
+    <button id="rocketBtn">FUSÉE 🚀</button>
+    <button id="resetBtn">REJOUER ↻</button>
   </div>
 
-  <!-- Faits/infos -->
+  <!-- Faits / bannières -->
   <div class="card" id="fact" hidden></div>
 
   <!-- Panneau Simulation NASA -->
@@ -132,18 +120,24 @@
   <div class="card" id="controlsCard">
     <b>Contrôles : Espace/Tap = Tir • B = Bouclier (2 s) • Fusée = Attaque spéciale • Évitez que les astéroïdes touchent la Terre !</b>
     <div style="margin-top:6px">
-      <a href="https://api.nasa.gov/" target="_blank">NASA APIs</a> •
-      <a href="https://ssd-api.jpl.nasa.gov/doc/cad.html" target="_blank">NEO Close-Approach Data</a>
+      <a href="https://api.nasa.gov/" target="_blank" rel="noopener">NASA APIs</a> •
+      <a href="https://ssd-api.jpl.nasa.gov/doc/cad.html" target="_blank" rel="noopener">NEO Close-Approach Data</a>
     </div>
   </div>
 </div>
 
 <script>
 (() => {
-  // ========= I18N =========
+  // ====== CONFIG & KEYS ======
+  const NASA_KEY = "R5ZYBmGm5IzEI3gEcYRgTFRhv97KdRf9laDdcsZj";
+  const NEO_FEED_URL = "https://api.nasa.gov/neo/rest/v1/feed";
+  const APOD_URL = "https://api.nasa.gov/planetary/apod";
+
+  // ====== I18N ======
   const texts = {
     fr: {
       lives:"Vies", score:"Score", level:"Niveau",
+      fire:"TIR 🔴", shield:"BOUCLIER 🛡️", rocket:"FUSÉE 🚀", reset:"REJOUER ↻",
       controls:"Contrôles : Espace/Tap = Tir • B = Bouclier (2 s) • Fusée = Attaque spéciale • Évitez que les astéroïdes touchent la Terre !",
       facts:{1:"Apophis passera très près de la Terre en 2029.",2:"En 2022, la mission DART a dévié l’orbite de Dimorphos.",3:"OSIRIS-REx a rapporté des échantillons de Bennu en 2023."},
       rocketReadyPrefix:"Fusée prête dans",
@@ -155,10 +149,14 @@
       diam:"Taille (m)", dv:"Δv (mm/s)", t:"Temps avant impact",
       simNote:"Modèle pédagogique simplifié (niveau Beginner) : déviation ≈ Δv × temps. Des modèles plus réalistes existent (hors scope 48h).",
       simResult:(miss, ok)=> `Nouvelle distance de raté ≈ ${miss.toFixed(0)} km — ${ok ? "ÉVITÉ ✅" : "IMPACT ❌"}`,
-      impactEnergy:(e)=>`💥 Impact simulé : énergie ≈ ${e}`
+      impactEnergy:(e)=>`💥 Impact simulé : énergie ≈ ${e}`,
+      apodTitle:"Image du jour de la NASA",
+      apodNote:"Source : NASA APOD • mise à jour quotidienne",
+      apodView:"Voir sur NASA"
     },
     en: {
       lives:"Lives", score:"Score", level:"Level",
+      fire:"FIRE 🔴", shield:"SHIELD 🛡️", rocket:"ROCKET 🚀", reset:"RESET ↻",
       controls:"Controls: Space/Tap = Fire • B = Shield (2s) • Rocket = Special attack • Don’t let asteroids hit Earth!",
       facts:{1:"Apophis will pass very close to Earth in 2029.",2:"In 2022, NASA’s DART mission changed Dimorphos’ orbit.",3:"OSIRIS-REx returned samples from Bennu in 2023."},
       rocketReadyPrefix:"Rocket ready in",
@@ -170,10 +168,14 @@
       diam:"Size (m)", dv:"Δv (mm/s)", t:"Time to impact",
       simNote:"Educational simplified model (Beginner level): deflection ≈ Δv × time. More realistic models exist (out of 48h scope).",
       simResult:(miss, ok)=> `New miss distance ≈ ${miss.toFixed(0)} km — ${ok ? "AVOIDED ✅" : "IMPACT ❌"}`,
-      impactEnergy:(e)=>`💥 Simulated impact: energy ≈ ${e}`
+      impactEnergy:(e)=>`💥 Simulated impact: energy ≈ ${e}`,
+      apodTitle:"NASA Image of the Day",
+      apodNote:"Source: NASA APOD • updates daily",
+      apodView:"View on NASA"
     },
     ln: {
       lives:"Bomoi", score:"Score", level:"Niveau",
+      fire:"KOBÉTA 🔴", shield:"BOUCLIER 🛡️", rocket:"ROKETE 🚀", reset:"KOBANDA LISUSU ↻",
       controls:"Kontrol: Espace/Tap = Kobɛta • B = Bouclier (2 s) • Rokete = Atake Spécial • Kobatela Mabelé!",
       facts:{1:"Apophis akoleka pene ya Mabelé na 2029.",2:"Na 2022, mission DART ya NASA ebongoli orbit ya Dimorphos.",3:"OSIRIS-REx ezongisi sample ya Bennu na 2023."},
       rocketReadyPrefix:"Rokete ekoya lisusu na",
@@ -185,94 +187,130 @@
       diam:"Bonene (m)", dv:"Δv (mm/s)", t:"Ntango liboso ya impact",
       simNote:"Modelo ya kelasi: kobengana ≈ Δv × ntango. Bimisa makasi ezali, kasi liboso te na mikolo 48.",
       simResult:(miss, ok)=> `Distance ya kobeta te ≈ ${miss.toFixed(0)} km — ${ok ? "EBENGAMI ✅" : "EKOBETA ❌"}`,
-      impactEnergy:(e)=>`💥 Impact simulé: makasi ≈ ${e}`
+      impactEnergy:(e)=>`💥 Impact simulé: makasi ≈ ${e}`,
+      apodTitle:"Elili ya mokolo ya NASA",
+      apodNote:"Sika: NASA APOD • ebalolami mokolo na mokolo",
+      apodView:"Talá na NASA"
     }
   };
   let currentLang = "fr";
+
   function applyLang(){
     const t=texts[currentLang];
+    // HUD labels
     document.getElementById('livesLabel').textContent=t.lives;
     document.getElementById('scoreLabel').textContent=t.score;
     document.getElementById('levelLabel').textContent=t.level;
-    document.getElementById('controlsCard').innerHTML=
+    // Buttons
+    document.getElementById('fireBtn').textContent=t.fire;
+    document.getElementById('shieldBtn').textContent=t.shield;
+    document.getElementById('rocketBtn').textContent=t.rocket;
+    document.getElementById('resetBtn').textContent=t.reset;
+    // Controls card
+    document.getElementById('controlsCard').innerHTML =
       `<b>${t.controls}</b>
        <div style="margin-top:6px">
-        <a href="https://api.nasa.gov/" target="_blank">NASA APIs</a> •
-        <a href="https://ssd-api.jpl.nasa.gov/doc/cad.html" target="_blank">NEO Close-Approach Data</a>
+        <a href="https://api.nasa.gov/" target="_blank" rel="noopener">NASA APIs</a> •
+        <a href="https://ssd-api.jpl.nasa.gov/doc/cad.html" target="_blank" rel="noopener">NEO Close-Approach Data</a>
        </div>`;
+    // Simulation labels
     document.getElementById('simTitle').textContent=t.simTitle;
     document.getElementById('simDesc').textContent=t.simDesc;
     document.getElementById('diamLabel').textContent=t.diam;
     document.getElementById('dvLabel').textContent=t.dv;
     document.getElementById('tLabel').textContent=t.t;
     document.getElementById('simNote').textContent=t.simNote;
+    // APOD labels (texte NASA; le contenu APOD reste dans la langue d'origine)
+    document.getElementById('apodTitle').textContent=t.apodTitle;
+    document.getElementById('apodNote').textContent=t.apodNote;
+    document.getElementById('apodLink').textContent=t.apodView;
+    // Fact live message adaptation si visible
+    const factBox=document.getElementById('fact');
+    if(!factBox.hidden){
+      const lvl=parseInt(document.getElementById('level').textContent||"1",10);
+      factBox.textContent=(t.facts||{})[lvl]||factBox.textContent;
+    }
   }
   function setLang(lang){
     currentLang = texts[lang]?lang:"fr";
     applyLang();
-    const factBox=document.getElementById('fact');
-    if(!factBox.hidden){
-      const lvl=parseInt(document.getElementById('level').textContent||"1",10);
-      factBox.textContent=(texts[currentLang].facts||{})[lvl]||"";
-    }
   }
   window.setLang=setLang;
 
-  // ========= NASA NEO API + Fallback =========
-  const NEO_FEED_URL="https://api.nasa.gov/neo/rest/v1/feed";
-  const API_KEY="DEMO_KEY"; // remplace par ta clé perso
-  const NEO_FALLBACK=[
-    {name:"(2024 AB)",diameter_m:120,velocity_kms:18,miss_km:750000,hazardous:false},
-    {name:"(2025 CD)",diameter_m:320,velocity_kms:22,miss_km:220000,hazardous:true},
-    {name:"(Bennu-like)",diameter_m:490,velocity_kms:12,miss_km:1500000,hazardous:false}
+  // ====== APOD Load ======
+  async function loadAPOD(){
+    try{
+      const r = await fetch(`${APOD_URL}?api_key=${NASA_KEY}`);
+      const data = await r.json();
+      const img = document.getElementById('apodImg');
+      const link = document.getElementById('apodLink');
+      const desc = document.getElementById('apodDesc');
+      img.src = data.url;
+      link.href = data.hdurl || data.url || '#';
+      desc.textContent = (data.explanation || '').slice(0, 240) + (data.explanation && data.explanation.length>240 ? '...' : '');
+      img.onload = () => img.classList.add('loaded');
+    }catch(e){
+      document.getElementById('apodDesc').textContent = "APOD unavailable.";
+    }
+  }
+
+  // ====== NEO API + Fallback ======
+  const NEO_FALLBACK = [
+    { name:"(2024 AB)", diameter_m:120, velocity_kms:18, miss_km:750000, hazardous:false },
+    { name:"(2025 CD)", diameter_m:320, velocity_kms:22, miss_km:220000, hazardous:true },
+    { name:"(Bennu-like)", diameter_m:490, velocity_kms:12, miss_km:1500000, hazardous:false }
   ];
   let NEO_LIST=[];
 
   async function fetchNEO(startDate){
-    const url=`${NEO_FEED_URL}?start_date=${startDate}&api_key=${API_KEY}`;
-    const r=await fetch(url);
+    const url = `${NEO_FEED_URL}?start_date=${startDate}&api_key=${NASA_KEY}`;
+    const r = await fetch(url);
     if(!r.ok) throw new Error("NEO API error");
-    const data=await r.json(); const list=[];
+    const data = await r.json();
+    const list=[];
     for(const day of Object.values(data.near_earth_objects)){ for(const o of day) list.push(o); }
     return list.map(mapNEOtoGame);
   }
   function mapNEOtoGame(neo){
-    const d=neo?.estimated_diameter?.meters?.estimated_diameter_max ?? 150;
-    const approach=neo?.close_approach_data?.[0];
-    const velocity=approach?parseFloat(approach.relative_velocity.kilometers_per_second):15;
-    const miss=approach?parseFloat(approach.miss_distance.kilometers):1000000;
-    return {name:neo?.name||"NEO",diameter_m:d,velocity_kms:velocity,miss_km:miss,hazardous:neo?.is_potentially_hazardous_asteroid||false};
+    const d = neo?.estimated_diameter?.meters?.estimated_diameter_max ?? 150;
+    const approach = neo?.close_approach_data?.[0];
+    const velocity = approach ? parseFloat(approach.relative_velocity.kilometers_per_second) : 15;
+    const miss = approach ? parseFloat(approach.miss_distance.kilometers) : 1000000;
+    return {
+      name: neo?.name || "NEO",
+      diameter_m: d, velocity_kms: velocity, miss_km: miss,
+      hazardous: neo?.is_potentially_hazardous_asteroid || false
+    };
   }
   async function initNEO(){
     try{
-      const today=new Date().toISOString().slice(0,10);
-      NEO_LIST=await fetchNEO(today);
-      if(!NEO_LIST.length) throw new Error("Empty list");
+      const today = new Date().toISOString().slice(0,10);
+      NEO_LIST = await fetchNEO(today);
+      if (!NEO_LIST.length) throw new Error("Empty list");
     }catch(e){
-      console.warn("API NASA indisponible → fallback",e);
-      NEO_LIST=NEO_FALLBACK;
+      console.warn("NEO API unavailable → fallback", e);
+      NEO_LIST = NEO_FALLBACK;
     }
   }
 
-  // ========= Jeu (Canvas) =========
-  const canvas=document.getElementById('game');
-  const c=canvas.getContext('2d');
-  const uiLives=document.getElementById('lives');
-  const uiScore=document.getElementById('score');
-  const uiLevel=document.getElementById('level');
-  const fact=document.getElementById('fact');
-  const W=canvas.width, H=canvas.height;
+  // ====== GAME ======
+  const canvas = document.getElementById('game');
+  const c = canvas.getContext('2d');
+  const uiLives = document.getElementById('lives');
+  const uiScore = document.getElementById('score');
+  const uiLevel = document.getElementById('level');
+  const fact = document.getElementById('fact');
+  const W = canvas.width, H = canvas.height;
 
-  const earth={x:W/2,y:H-50,r:30};
-  let bullets=[], asteroids=[];
-  let lives=3, score=0, level=1, running=true;
-  let shield={active:false,timer:0,cooldown:0};
-  let rocket={active:false,x:0,y:0,vy:-320,cooldown:0};
-  let lastTime=0, usedShieldOnce=false, earthAngle=0;
+  const earth = { x: W/2, y: H-50, r: 30 };
+  let bullets = [], asteroids = [];
+  let lives = 3, score = 0, level = 1, running = true;
+  let shield = { active:false, timer:0, cooldown:0 };
+  let rocket = { active:false, x:0, y:0, vy:-320, cooldown:0 };
+  let lastTime = 0, usedShieldOnce = false, earthAngle = 0;
 
-  // explosions animées (particules + flash)
-  const explosions=[]; // {x,y,life,max,particles:[{x,y,vx,vy,life}]}
-  let screenFlash=0; // alpha 0..1
+  // Explosions
+  const explosions=[]; let screenFlash=0;
 
   function showFactTimed(t, ms=4000){ fact.textContent=t; fact.hidden=false; setTimeout(()=>fact.hidden=true,ms); }
   function showFactLevel(lvl){
@@ -281,11 +319,11 @@
   }
 
   function reset(){
-    lives=3;score=0;level=1;bullets=[];asteroids=[];
-    running=true;shield={active:false,timer:0,cooldown:0};
+    lives=3; score=0; level=1; bullets=[]; asteroids=[];
+    running=true; shield={active:false,timer:0,cooldown:0};
     rocket={active:false,x:0,y:0,vy:-320,cooldown:0};
-    lastTime=0;usedShieldOnce=false;uiLives.textContent=lives;
-    uiScore.textContent=score;uiLevel.textContent=level;
+    lastTime=0; usedShieldOnce=false;
+    uiLives.textContent=lives; uiScore.textContent=score; uiLevel.textContent=level;
     spawnWave(); showFactLevel(1);
   }
 
@@ -323,39 +361,46 @@
     }
   }
 
+  // Inputs
+  document.getElementById('fireBtn').onclick = () => fire();
+  document.getElementById('shieldBtn').onclick = () => activateShield();
+  document.getElementById('rocketBtn').onclick = () => launchRocket();
+  document.getElementById('resetBtn').onclick = () => reset();
+  window.addEventListener('keydown', (e)=>{
+    if (e.code === 'Space') { e.preventDefault(); fire(); }
+    if (e.key?.toLowerCase() === 'b') { activateShield(); }
+    if (e.key?.toLowerCase() === 'r') { reset(); }
+  });
+  canvas.addEventListener('pointerdown', ()=>fire(), {passive:true});
+
+  // Gameplay actions
   function fire(){ if(!running) return; bullets.push({x:earth.x,y:earth.y-earth.r-6,vy:-560}); }
   function activateShield(){
     if(!running) return;
     if(shield.cooldown>0||shield.active) return;
-    shield.active=true;shield.timer=2.0;shield.cooldown=5.0;
+    shield.active=true; shield.timer=2.0; shield.cooldown=5.0;
   }
   function launchRocket(){
     if(!running) return;
     if(rocket.active||rocket.cooldown>0) return;
-    rocket.active=true;rocket.x=earth.x;rocket.y=earth.y-earth.r-8;rocket.cooldown=8;
+    rocket.active=true; rocket.x=earth.x; rocket.y=earth.y-earth.r-8; rocket.cooldown=8;
   }
 
-  // ====== Animations d'impact ======
-  function formatEnergyTNT(joules){
-    const tnt_per_ton=4.184e9;
-    const tons=joules/tnt_per_ton;
+  // Physics helpers
+  function formatEnergyTNT(J){
+    const tntPerTon=4.184e9; const tons=J/tntPerTon;
     if(tons<1e3) return `${tons.toFixed(0)} t TNT`;
     if(tons<1e6) return `${(tons/1e3).toFixed(1)} kt TNT`;
     return `${(tons/1e6).toFixed(2)} Mt TNT`;
   }
   function estimateImpactEnergyJ(diameter_m, velocity_kms){
-    // masse ~ sphère roche ρ=3000 kg/m3
-    const r=diameter_m/2;
-    const rho=3000;
-    const volume=4/3*Math.PI*r*r*r;
-    const mass=volume*rho; // kg
-    const v=velocity_kms*1000; // m/s
-    return 0.5*mass*v*v;
+    const r=diameter_m/2, rho=3000, volume=4/3*Math.PI*r*r*r, mass=volume*rho;
+    const v=velocity_kms*1000; return 0.5*mass*v*v;
   }
 
+  // Explosions
   function spawnExplosion(x,y,power=1){
-    const parts=[];
-    const count=Math.floor(60*power);
+    const parts=[]; const count=Math.floor(60*power);
     for(let i=0;i<count;i++){
       const ang=Math.random()*Math.PI*2;
       const sp=(80+120*Math.random())*power;
@@ -364,69 +409,40 @@
     explosions.push({x,y,life:0,max:1.2,particles:parts});
     screenFlash=Math.min(0.7,0.3+0.2*power);
   }
-
   function updateExplosions(dt){
     for(const e of explosions){
       e.life+=dt;
       for(const p of e.particles){
-        p.life+=dt;
-        p.x+=p.vx*dt; p.y+=p.vy*dt;
-        p.vx*=0.98; p.vy*=0.98; // friction
+        p.life+=dt; p.x+=p.vx*dt; p.y+=p.vy*dt; p.vx*=0.98; p.vy*=0.98;
       }
     }
-    // flash decay
-    screenFlash=Math.max(0, screenFlash - dt*1.2);
-    // remove finished
-    for(let i=explosions.length-1;i>=0;i--){
-      if(explosions[i].life>explosions[i].max) explosions.splice(i,1);
-    }
+    screenFlash=Math.max(0,screenFlash-dt*1.2);
+    for(let i=explosions.length-1;i>=0;i--){ if(explosions[i].life>explosions[i].max) explosions.splice(i,1); }
   }
   function drawExplosions(){
-    // flash overlay
-    if(screenFlash>0){
-      c.save();
-      c.globalAlpha=screenFlash*0.6;
-      c.fillStyle="#fff";
-      c.fillRect(0,0,W,H);
-      c.restore();
-    }
-    // particles + shock rings
+    if(screenFlash>0){ c.save(); c.globalAlpha=screenFlash*0.6; c.fillStyle="#fff"; c.fillRect(0,0,W,H); c.restore(); }
     for(const e of explosions){
       const prog=e.life/e.max;
-      // shock ring
       c.save();
       c.globalAlpha=Math.max(0,0.5-0.5*prog);
-      c.strokeStyle="rgba(255,200,80,0.9)";
-      c.lineWidth=2+8*(1-prog);
-      c.beginPath();
-      c.arc(e.x,e.y, 30+120*prog, 0, Math.PI*2);
-      c.stroke();
-      c.restore();
-
-      // particles
+      c.strokeStyle="rgba(255,200,80,0.9)"; c.lineWidth=2+8*(1-prog);
+      c.beginPath(); c.arc(e.x,e.y,30+120*prog,0,Math.PI*2); c.stroke(); c.restore();
       for(const p of e.particles){
-        const a=Math.max(0,1-p.life/p.max);
-        if(a<=0) continue;
+        const a=Math.max(0,1-p.life/p.max); if(a<=0) continue;
         const grd=c.createRadialGradient(p.x,p.y,0,p.x,p.y,6);
         grd.addColorStop(0,"rgba(255,230,120,1)");
         grd.addColorStop(0.5,"rgba(255,120,60,0.9)");
         grd.addColorStop(1,"rgba(255,0,0,0)");
-        c.save();
-        c.globalAlpha=a;
-        c.fillStyle=grd;
-        c.beginPath(); c.arc(p.x,p.y,6,0,Math.PI*2); c.fill();
-        c.restore();
+        c.save(); c.globalAlpha=a; c.fillStyle=grd;
+        c.beginPath(); c.arc(p.x,p.y,6,0,Math.PI*2); c.fill(); c.restore();
       }
     }
   }
-
-  // Explosion de la fusée (DART)
   function explodeAt(x,y){
-    let destroyed=0;
-    const R=70;
+    let destroyed=0; const R=70;
     asteroids=asteroids.filter(a=>{
       const dx=a.x-x, dy=a.y-y;
-      if(dx*dx+dy*dy<=R*R){ a.hp-=3; if(a.hp<=0){ score+=1; destroyed++; return false; } }
+      if(dx*dx+dy*dy<=R*R){ a.hp=(a.hp||1)-3; if(a.hp<=0){ score+=1; destroyed++; return false; } }
       return true;
     });
     uiScore.textContent=score;
@@ -435,19 +451,7 @@
     showFactTimed(msg,1200);
   }
 
-  // ====== Entrées ======
-  document.getElementById('fireBtn').onclick=fire;
-  document.getElementById('shieldBtn').onclick=activateShield;
-  document.getElementById('rocketBtn').onclick=launchRocket;
-  document.getElementById('resetBtn').onclick=reset;
-  window.addEventListener('keydown',e=>{
-    if(e.code==='Space'){e.preventDefault();fire();}
-    if(e.key?.toLowerCase()==='b') activateShield();
-    if(e.key?.toLowerCase()==='r') reset();
-  });
-  canvas.addEventListener('pointerdown',fire,{passive:true});
-
-  // ====== Simulation NASA (Δv) ======
+  // Simulation Δv (pédago)
   const diamEl=document.getElementById('diam');
   const dvEl=document.getElementById('dv');
   const daysEl=document.getElementById('days');
@@ -461,7 +465,11 @@
       daysOut.textContent=daysEl.value;
     });
   });
-
+  document.getElementById('applyMitigation').onclick=()=>{
+    const neo=chooseNEOforLevel(level)||{miss_km:0,velocity_kms:15};
+    neo.diameter_m=parseFloat(diamEl.value);
+    testMitigation(neo);
+  };
   function testMitigation(currentNeo){
     const t=texts[currentLang];
     const T=parseInt(daysEl.value,10)*24*3600; // s
@@ -470,11 +478,7 @@
     const base_miss=currentNeo?.miss_km??0;
     const new_miss=base_miss + dv_km_s*T; // modèle éducatif
     const ok=new_miss>0;
-
-    // Affichage texte
     document.getElementById('simOut').textContent=t.simResult(new_miss,ok);
-
-    // Si pas évité → explosion pédagogique au centre (impact simulé)
     if(!ok){
       const energyJ=estimateImpactEnergyJ(parseFloat(diamEl.value), currentNeo?.velocity_kms||15);
       const eLabel=formatEnergyTNT(energyJ);
@@ -482,13 +486,8 @@
       showFactTimed(t.impactEnergy(eLabel), 2500);
     }
   }
-  document.getElementById('applyMitigation').onclick=()=>{
-    const neo=chooseNEOforLevel(level)||{miss_km:0,velocity_kms:15};
-    neo.diameter_m=parseFloat(diamEl.value); // reflète le choix curseur
-    testMitigation(neo);
-  };
 
-  // ====== Boucle ======
+  // Loop
   function loop(ts){
     if(!lastTime) lastTime=ts;
     let dt=(ts-lastTime)/1000; if(dt<=0) dt=1/60; if(dt>0.033) dt=0.033;
@@ -496,8 +495,8 @@
     update(dt); draw();
     if(running) requestAnimationFrame(loop);
   }
-
   function update(dt){
+    // Terre rotation
     earthAngle=(earthAngle+0.15*dt)%(Math.PI*2);
 
     // Timers
@@ -507,4 +506,172 @@
 
     // Rocket
     if(rocket.active){
-      rocket.y+=rocket.
+      rocket.y+=rocket.vy*dt;
+      for(const a of asteroids){
+        const dx=a.x-rocket.x, dy=a.y-rocket.y;
+        if(dx*dx+dy*dy<(a.r+10)*(a.r+10)){ explodeAt(rocket.x,rocket.y); rocket.active=false; break; }
+      }
+      if(rocket.y<-20) rocket.active=false;
+    }
+
+    // Bullets
+    for(const b of bullets){ if(typeof b.vy!=="number") b.vy=-560; b.y+=b.vy*dt; }
+    bullets=bullets.filter(b=>b.y>-20);
+
+    // Asteroids
+    for(const a of asteroids){
+      a.y+=a.speed*dt;
+      // bullets collision
+      for(const b of bullets){
+        const dx=a.x-b.x, dy=a.y-b.y;
+        if(dx*dx+dy*dy<(a.r+6)*(a.r+6)){
+          if(level<3||usedShieldOnce) a.hp=(a.hp||1)-1;
+          b.y=-9999;
+        }
+      }
+      // Earth collision
+      const dx=a.x-earth.x, dy=a.y-earth.y;
+      if(dx*dx+dy*dy<(a.r+earth.r)*(a.r+earth.r)){
+        if(shield.active){ a.y-=30; a.speed*=0.6; }
+        else{
+          const energyJ=estimateImpactEnergyJ(a.diameter_m||150, a.velocity_kms||15);
+          const eLabel=formatEnergyTNT(energyJ);
+          spawnExplosion(earth.x, earth.y-10, 1.0);
+          showFactTimed(texts[currentLang].impactEnergy(eLabel), 2500);
+          lives-=1; uiLives.textContent=lives; a.y=H+50;
+        }
+      }
+    }
+
+    const before=asteroids.length;
+    asteroids=asteroids.filter(a=>{ if((a.hp||1)<=0){ score+=1; uiScore.textContent=score; return false; } return a.y<H+40; });
+
+    // Next level
+    if(asteroids.length===0 && before>0){
+      if(level<3){ level+=1; uiLevel.textContent=level; spawnWave(); showFactLevel(level); if(level===3) usedShieldOnce=false; }
+      else{ running=false; showFactTimed(texts[currentLang].victory,4000); }
+    }
+    if(level===3 && shield.active) usedShieldOnce=true;
+
+    // Game over
+    if(lives<=0 && running){ running=false; showFactTimed(texts[currentLang].gameOver,3000); }
+
+    // Explosions
+    updateExplosions(dt);
+  }
+  function drawStars(){
+    c.save();
+    for(let i=0;i<100;i++){
+      const x=(i*97)%W, y=(i*57)%H;
+      c.fillStyle= i%7===0 ? "#99aaff" : "#5560aa";
+      c.fillRect(x,y,2,2);
+    }
+    c.restore();
+  }
+  function drawEarth(){
+    const r=earth.r, x=earth.x, y=earth.y;
+    c.save(); c.translate(x,y);
+    // Halo
+    c.beginPath(); c.arc(0,0,r+11,0,Math.PI*2);
+    c.strokeStyle="rgba(120,200,255,0.35)"; c.lineWidth=9; c.stroke();
+    // Océan
+    const g=c.createRadialGradient(-r*0.3,-r*0.35,r*0.2, 0,0, r);
+    g.addColorStop(0.0,"#17b0ff"); g.addColorStop(0.6,"#0a76c4"); g.addColorStop(1.0,"#06335e");
+    c.fillStyle=g; c.beginPath(); c.arc(0,0,r,0,Math.PI*2); c.fill();
+    // Continents
+    c.rotate(earthAngle); c.fillStyle="#5ac16b";
+    c.beginPath();
+    c.moveTo(-r*0.25,-r*0.15);
+    c.bezierCurveTo(-r*0.05,-r*0.35, r*0.25,-r*0.30, r*0.20,-r*0.05);
+    c.bezierCurveTo( r*0.35, r*0.15, r*0.10, r*0.35,-r*0.05, r*0.25);
+    c.bezierCurveTo(-r*0.20, r*0.15,-r*0.35, 0,   -r*0.25,-r*0.05);
+    c.closePath(); c.fill();
+    c.beginPath();
+    c.moveTo(-r*0.55,0);
+    c.bezierCurveTo(-r*0.65,-r*0.10,-r*0.55, r*0.20,-r*0.45, r*0.30);
+    c.bezierCurveTo(-r*0.35, r*0.45,-r*0.25, r*0.35,-r*0.30, r*0.15);
+    c.closePath(); c.fill();
+    c.beginPath(); c.ellipse(r*0.28,r*0.15,r*0.06,r*0.03,0,0,Math.PI*2); c.fill();
+    // Nuages
+    c.globalAlpha=0.12; c.strokeStyle="#fff"; c.lineWidth=3;
+    for(let i=-1;i<=1;i++){
+      c.beginPath();
+      c.arc(0,0,r*(0.55+i*0.18+0.08*Math.sin(earthAngle*2+i)),-Math.PI*0.2,Math.PI*0.8);
+      c.stroke();
+    }
+    c.globalAlpha=1; c.restore();
+    // Motte fourmis
+    c.fillStyle="#6b4a2f"; c.fillRect(x-35,y+r-6,70,8);
+  }
+  function drawNeoArc(){
+    const boss=asteroids.find(a=> (a.hp||1) > 1);
+    if(!boss) return;
+    c.save();
+    c.strokeStyle="#4fc3f7"; c.setLineDash([6,4]);
+    c.beginPath();
+    c.arc(W/2,H+360,380,-Math.PI*0.95,-Math.PI*0.65);
+    c.stroke();
+    c.setLineDash([]);
+    c.fillStyle="#9ad7ff";
+    c.fillText(boss.name||"NEO",12,34);
+    c.restore();
+  }
+  function draw(){
+    c.clearRect(0,0,W,H);
+    drawStars();
+    drawEarth();
+
+    // Shield
+    if(shield.active){
+      c.save(); c.strokeStyle="#58ffa4"; c.lineWidth=4;
+      c.beginPath(); c.arc(earth.x, earth.y, earth.r+12, 0, Math.PI*2); c.stroke(); c.restore();
+    }
+
+    // Rocket
+    if(rocket.active){
+      c.save();
+      c.fillStyle="#ffd54d"; c.fillRect(rocket.x-4, rocket.y-10, 8, 20);
+      c.fillStyle="#ff6e40"; c.fillRect(rocket.x-3, rocket.y+10, 6, 8);
+      c.restore();
+    }
+    // Rocket cooldown text
+    c.save(); c.fillStyle="#fff";
+    const cdText = `${texts[currentLang].rocketReadyPrefix}: ${rocket.cooldown.toFixed(1)}s`;
+    c.fillText(cdText, 10, 18);
+    c.restore();
+
+    // Bullets
+    c.save(); c.fillStyle="#ff3b30";
+    bullets.forEach(b => c.fillRect(b.x-3, b.y-10, 6, 12));
+    c.restore();
+
+    // Asteroids
+    for(const a of asteroids){
+      c.save();
+      const g=c.createRadialGradient(a.x-3,a.y-3,2,a.x,a.y,a.r);
+      g.addColorStop(0,"#c7a47a"); g.addColorStop(1,"#6b5136");
+      c.fillStyle=g; c.beginPath(); c.arc(a.x,a.y,a.r,0,Math.PI*2); c.fill();
+      // HP pips
+      c.fillStyle="#fff";
+      const hpVal=(a.hp||1);
+      for(let i=0;i<hpVal;i++){ c.fillRect(a.x-a.r+4+i*6, a.y-a.r-10, 4, 4); }
+      c.restore();
+    }
+
+    drawNeoArc();
+    drawExplosions();
+  }
+
+  // ====== INIT ======
+  function init(){
+    applyLang();
+    loadAPOD();
+    initNEO().then(()=>{ reset(); requestAnimationFrame(loop); });
+    // Sécurité mobile si RAF throttle
+    setInterval(()=>{ if(running){ update(1/60); draw(); } }, 1000/60);
+  }
+  init();
+})();
+</script>
+</body>
+</html>
