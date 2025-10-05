@@ -3,60 +3,61 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Meteor Madness: Ants to the Rescue</title>
+<title>Meteor Madness: Ants to the Rescue — Planetary Defense</title>
 
-<!-- Leaflet (carte) -->
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<!-- Leaflet -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="anonymous"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin="anonymous"></script>
+
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js" crossorigin="anonymous"></script>
 
 <style>
   :root{
-    --electric-blue:#17b0ff;
-    --deep-blue:#0a1a40;
-    --neon-yellow:#e6ff00;
-    --panel:#0b1020;
-    --panel2:#0e1630;
-    --text:#ffffff;
+    --electric-blue:#17b0ff; --deep-blue:#0a1a40; --neon-yellow:#e6ff00;
+    --panel:#0b1020; --panel2:#0e1630; --text:#ffffff;
   }
-  html,body{margin:0;height:100%;background:linear-gradient(45deg,var(--electric-blue),var(--deep-blue));color:var(--text);font-family:system-ui,Arial}
+  html,body{margin:0;height:100%;background:linear-gradient(45deg,var(--electric-blue),var(--deep-blue));color:var(--text);font-family:system-ui,Segoe UI,Arial}
   a{color:#9ad7ff}
-  #wrap{max-width:980px;margin:0 auto;padding:12px}
-  h1,h2{margin:.4rem 0}
-  /* Bannière APOD */
-  .apod{position:relative;border-radius:12px;overflow:hidden;margin:8px 0;border:1px solid #1b2b55}
-  .apod img{width:100%;height:200px;object-fit:cover;display:block}
-  .apod .cap{position:absolute;left:0;right:0;bottom:0;background:linear-gradient(180deg,transparent,rgba(0,0,0,.7));padding:8px 10px;font-size:.95rem}
-  .apod .cap b{display:block}
-  .apod small{opacity:.85}
+  #wrap{max-width:1180px;margin:0 auto;padding:14px}
+  h1{margin:.4rem 0}
+  .grid{display:grid;gap:12px}
+  @media(min-width:1100px){.grid{grid-template-columns:1.1fr .9fr}}
+  .card{background:linear-gradient(180deg,var(--panel),#0b0f1c);border:1px solid #233259;border-radius:12px;padding:12px}
+  .title{font-weight:800;margin-bottom:8px}
+  .lang{display:flex;gap:8px;margin:6px 0}
   .hud{display:flex;gap:10px;flex-wrap:wrap;margin:10px 0}
   .chip{background:rgba(0,0,0,.55);border:1px solid #30406b;border-radius:10px;padding:6px 10px}
-  .lang{display:flex;gap:8px;margin:6px 0}
   .btns{display:flex;gap:10px;flex-wrap:wrap}
   button{background:var(--panel2);color:var(--neon-yellow);border:2px solid var(--neon-yellow);border-radius:12px;padding:10px 14px;font-weight:700;cursor:pointer}
   button:hover{background:#123069;color:#fff}
   button:active{transform:translateY(1px)}
-  .card{background:linear-gradient(180deg,var(--panel),#0b0f1c);border:1px solid #233259;border-radius:12px;padding:12px;margin:12px 0}
-  .title{font-weight:800;margin-bottom:8px}
-  canvas{width:100%;height:auto;border-radius:12px;border:1px solid #1e2948;background:radial-gradient(ellipse at center,#050815 0%,#000 70%)}
-  input[type=range]{width:190px}
-  .legend{position:absolute;background:#111a;border:1px solid #445;padding:6px 8px;border-radius:8px;color:#fff;backdrop-filter:blur(2px)}
-  .note{opacity:.85;font-size:.92rem}
-  /* carte bloc */
-  #map{width:100%;height:380px;border:1px solid #1e2948;border-radius:12px}
+  canvas.game{width:100%;height:auto;border-radius:12px;border:1px solid #1e2948;background:radial-gradient(ellipse at center,#050815 0%,#000 70%)}
+  input[type=range]{width:180px}
+  .note{opacity:.9;font-size:.92rem}
+  /* APOD */
+  .apod{position:relative;border-radius:12px;overflow:hidden;margin:8px 0;border:1px solid #1b2b55}
+  .apod img{width:100%;height:220px;object-fit:cover;display:block}
+  .apod .cap{position:absolute;left:0;right:0;bottom:0;background:linear-gradient(180deg,transparent,rgba(0,0,0,.7));padding:8px 10px;font-size:.95rem}
+  .apod .cap b{display:block}
+  /* Map / charts */
+  #map{width:100%;height:460px;border:1px solid #1e2948;border-radius:12px}
+  .legend{font-size:.9rem;background:#0b0f1bcc;padding:8px 10px;border-radius:8px;border:1px solid #31405f;color:#fff}
+  .chartbox{background:#0a1330;border:1px solid #213a6a;border-radius:10px;padding:8px}
 </style>
 </head>
 <body>
 <div id="wrap">
-  <h1>Meteor Madness: Ants to the Rescue 🐜☄️</h1>
+  <h1>Meteor Madness: Ants to the Rescue 🐜☄️ — Planetary Defense</h1>
 
-  <!-- Sélecteur langues -->
+  <!-- Langues -->
   <div class="lang">
     <button onclick="setLang('fr')">🇫🇷 Français</button>
     <button onclick="setLang('en')">🇬🇧 English</button>
     <button onclick="setLang('ln')">🇨🇩 Lingála</button>
   </div>
 
-  <!-- Bannière APOD -->
+  <!-- APOD -->
   <a id="apodLink" class="apod" href="#" target="_blank" rel="noopener">
     <img id="apodImg" alt="APOD banner"/>
     <div class="cap"><b id="apodTitle">Astronomy Picture of the Day</b>
@@ -64,144 +65,112 @@
     </div>
   </a>
 
-  <!-- HUD -->
-  <div class="hud">
-    <div class="chip"><span id="livesLabel">Vies</span>: <span id="lives">3</span></div>
-    <div class="chip"><span id="scoreLabel">Score</span>: <span id="score">0</span></div>
-    <div class="chip"><span id="levelLabel">Niveau</span>: <span id="level">1</span></div>
-  </div>
+  <div class="grid">
+    <!-- Colonne gauche: CARTE + SIMU -->
+    <div class="card">
+      <div class="title" id="mapTitle">Impact & Risk Map (NASA + USGS)</div>
+      <div id="map"></div>
+      <div class="note" id="mapHint" style="margin-top:8px">
+        Click the map to place an impact. Blue circle = crater diameter (approx). Yellow dashed = tsunami reach (deep water). Orange line = Apophis 2029 (approx ground track); small dot animates along it.
+      </div>
 
-  <!-- Canvas du jeu -->
-  <canvas id="game" width="960" height="560"></canvas>
+      <!-- Simulation Δv / Tsunami -->
+      <div class="card" style="margin-top:12px">
+        <div class="title" id="simTitle">NASA Simulation (Δv deflection) + Tsunami (educational)</div>
+        <div id="simDesc" class="note">
+          Kinetic-impactor (DART-like): a small early Δv can avoid impact. If not avoided and oceanic, a simplified tsunami model (Ward & Asphaug–style scaling) estimates wave heights.
+        </div>
+        <div style="display:flex;gap:14px;flex-wrap:wrap;align-items:center;margin-top:6px">
+          <label><span id="diamLabel">Size (m)</span> :
+            <input type="range" id="diam" min="50" max="1500" value="300"> <span id="diamOut">300</span></label>
+          <label>Velocity (km/s) :
+            <input type="range" id="vel" min="10" max="30" step="0.5" value="20"> <span id="velOut">20.0</span></label>
+          <label>Water depth (m) :
+            <input type="range" id="depth" min="500" max="6000" step="100" value="4000"> <span id="depthOut">4000</span></label>
+          <label><span id="dvLabel">Δv (mm/s)</span> :
+            <input type="range" id="dv" min="0" max="5" step="0.1" value="1"> <span id="dvOut">1.0</span></label>
+          <label><span id="tLabel">Time (days)</span> :
+            <input type="range" id="days" min="5" max="180" step="5" value="30"> <span id="daysOut">30</span></label>
+          <button id="applyMitigation">Test</button>
+        </div>
+        <div id="simOut" style="margin-top:8px;white-space:pre-wrap;font-weight:700"></div>
 
-  <!-- Boutons jeu (multilingue) -->
-  <div class="btns">
-    <button id="fireBtn">TIR 🔴 (Espace / Tap)</button>
-    <button id="shieldBtn">Bouclier 🛡️ (B)</button>
-    <button id="rocketBtn">Fusée 🚀 (Spécial)</button>
-    <button id="resetBtn">Rejouer ↻</button>
-  </div>
+        <div class="chartbox" style="margin-top:8px">
+          <canvas id="chartTsunami" height="180"></canvas>
+        </div>
 
-  <!-- Panneau Simulation Δv -->
-  <div class="card">
-    <div class="title" id="simTitle">Simulation NASA (déviation Δv)</div>
-    <div id="simDesc" class="note">Impacteur cinétique (type DART) : une petite Δv appliquée tôt peut éviter l’impact.</div>
-
-    <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:center;margin-top:6px">
-      <label><span id="diamLabel">Taille (m)</span> :
-        <input type="range" id="diam" min="50" max="800" value="200"> <span id="diamOut">200</span> m</label>
-      <label><span id="dvLabel">Δv (mm/s)</span> :
-        <input type="range" id="dv" min="0" max="5" step="0.1" value="1"> <span id="dvOut">1.0</span> mm/s</label>
-      <label><span id="tLabel">Temps (jours)</span> :
-        <input type="range" id="days" min="5" max="120" step="5" value="30"> <span id="daysOut">30</span></label>
-      <button id="applyMitigation">Tester</button>
+        <small id="simNote" class="note">
+          Educational models only: deflection ≈ Δv × time; tsunami scaling loosely inspired by Ward & Asphaug (2000): initial amplitude scales with impact momentum and decays ~ R<sup>-3/2</sup> in deep water. Replace with peer-reviewed solvers for publication-grade work.
+        </small>
+      </div>
     </div>
-    <div id="simOut" style="margin-top:8px;font-weight:700"></div>
-    <div class="note" id="simNote">Modèle éducatif : déviation ≈ Δv × temps.</div>
-  </div>
 
-  <!-- Carte d'impact liée à la simulation -->
-  <div class="card">
-    <div class="title" id="mapTitle">Carte d’impact (clique pour placer le point)</div>
-    <div id="map"></div>
-    <div class="note" id="mapHint" style="margin-top:8px">
-      Astuce : clique sur la carte pour simuler un impact. Les cercles montrent ~diamètre du cratère et portée tsunami (si océan).
+    <!-- Colonne droite: Jeu + KPIs -->
+    <div>
+      <div class="hud">
+        <div class="chip"><span id="livesLabel">Lives</span>: <span id="lives">3</span></div>
+        <div class="chip"><span id="scoreLabel">Score</span>: <span id="score">0</span></div>
+        <div class="chip"><span id="levelLabel">Level</span>: <span id="level">1</span></div>
+      </div>
+      <canvas id="game" class="game" width="960" height="560"></canvas>
+      <div class="btns" style="margin-top:8px">
+        <button id="fireBtn">FIRE 🔴 (Space/Tap)</button>
+        <button id="shieldBtn">Shield 🛡️ (B)</button>
+        <button id="rocketBtn">Rocket 🚀 (Special)</button>
+        <button id="resetBtn">Restart ↻</button>
+      </div>
+
+      <div id="fact" class="card" hidden></div>
+
+      <div class="card" id="controlsCard" style="margin-top:12px">
+        <b>Controls: Space/Tap = Fire • B = Shield (2s) • Rocket = Special • Don’t let asteroids hit Earth!</b>
+        <div class="note" style="margin-top:6px">
+          NASA Data: <a href="https://api.nasa.gov/" target="_blank" rel="noopener">APIs</a> •
+          <a href="https://ssd-api.jpl.nasa.gov/doc/cad.html" target="_blank" rel="noopener">Close-Approach (CAD)</a> •
+          <a href="https://ssd.jpl.nasa.gov/tools/sbdb_lookup.html#/?sstr=99942" target="_blank" rel="noopener">SBDB (Apophis)</a>
+        </div>
+      </div>
     </div>
   </div>
-
-  <!-- Infos / liens -->
-  <div class="card" id="controlsCard">
-    <b>Contrôles : Espace/Tap = Tir • B = Bouclier (2 s) • Fusée = Attaque spéciale • Évitez que les astéroïdes touchent la Terre !</b>
-    <div style="margin-top:6px">
-      <a href="https://api.nasa.gov/" target="_blank" rel="noopener">NASA APIs</a> •
-      <a href="https://ssd-api.jpl.nasa.gov/doc/cad.html" target="_blank" rel="noopener">NEO Close-Approach Data</a>
-    </div>
-  </div>
-
-  <div id="fact" class="card" hidden></div>
 </div>
 
 <script>
-/* ================== CONFIG ================== */
-const NASA_API_KEY = "R5ZYBmGm5IzEI3gEcYRgTFRhv97KdRf9laDdcsZj"; // ta clé
+/* ================== CONFIG / I18N ================== */
+const NASA_API_KEY = "R5ZYBmGmGm5IzEI3gEcYRgTFRhv97KdRf9laDdcsZj".replace("GmGm","Gm"); // anti-bot tiny obfuscation
 const APOD_URL = `https://api.nasa.gov/planetary/apod?api_key=${encodeURIComponent(NASA_API_KEY)}&thumbs=true`;
 
-/* ================== APOD (bannière) ================== */
-(async function loadAPOD(){
-  const img = document.getElementById('apodImg');
-  const title = document.getElementById('apodTitle');
-  const explain = document.getElementById('apodExplain');
-  const link = document.getElementById('apodLink');
-  const fallback = {
-    url: "https://images.unsplash.com/photo-1444703686981-a3abbc4d4fe3?q=80&w=1600&auto=format&fit=crop",
-    title: "Space Inspiration",
-    explain: "Fallback image (APOD unavailable)."
-  };
-  try{
-    const r = await fetch(APOD_URL, {cache:"no-store"});
-    if(!r.ok) throw new Error("APOD error");
-    const apod = await r.json();
-    const media = apod.media_type === "image" ? (apod.hdurl || apod.url) : (apod.thumbnail_url || fallback.url);
-    img.src = media;
-    img.alt = apod.title || "APOD";
-    title.textContent = apod.title || "Astronomy Picture of the Day";
-    explain.textContent = apod.explanation ? (apod.explanation.slice(0,140) + "…") : "";
-    link.href = apod.hdurl || apod.url || media;
-  }catch(e){
-    img.src = fallback.url;
-    img.alt = fallback.title;
-    title.textContent = fallback.title;
-    explain.textContent = fallback.explain;
-    link.href = fallback.url;
-  }
-})();
-
-/* ================== I18N ================== */
 const texts = {
-  fr: {
-    lives:"Vies", score:"Score", level:"Niveau",
-    fire:"TIR 🔴 (Espace / Tap)", shield:"Bouclier 🛡️ (B)", rocket:"Fusée 🚀 (Spécial)", reset:"Rejouer ↻",
-    simTitle:"Simulation NASA (déviation Δv)",
-    simDesc:"Impacteur cinétique (type DART) : une petite Δv appliquée tôt peut éviter l’impact.",
-    diam:"Taille (m)", dv:"Δv (mm/s)", t:"Temps (jours)", test:"Tester",
-    simNote:"Modèle éducatif : déviation ≈ Δv × temps.",
-    simResult:(miss, ok)=>`Nouvelle distance de raté ≈ ${miss.toFixed(0)} km — ${ok ? "ÉVITÉ ✅" : "IMPACT ❌"}`,
-    mapTitle:"Carte d’impact (clique pour placer le point)",
-    mapHint:"Astuce : clique sur la carte pour simuler un impact. Les cercles montrent ~diamètre du cratère et portée tsunami (si océan).",
-    legend:"Légende", legCrater:"Cratère (~diam.)", legWave:"Portée tsunami (si océan)",
-    rocketReadyPrefix:"Fusée prête dans", victory:"Victoire !", gameOver:"Game Over 💥",
-    impactEnergy:(e)=>`💥 Énergie d’impact ≈ ${e}`
-  },
-  en: {
-    lives:"Lives", score:"Score", level:"Level",
-    fire:"FIRE 🔴 (Space / Tap)", shield:"Shield 🛡️ (B)", rocket:"Rocket 🚀 (Special)", reset:"Restart ↻",
-    simTitle:"NASA Simulation (Δv deflection)",
-    simDesc:"Kinetic impactor (DART-like): a small early Δv can avoid impact.",
-    diam:"Size (m)", dv:"Δv (mm/s)", t:"Time (days)", test:"Test",
-    simNote:"Educational model: deflection ≈ Δv × time.",
-    simResult:(miss, ok)=>`New miss distance ≈ ${miss.toFixed(0)} km — ${ok ? "AVOIDED ✅" : "IMPACT ❌"}`,
-    mapTitle:"Impact map (click to place impact)",
-    mapHint:"Tip: click the map to simulate an impact. Circles show crater ~diameter and tsunami reach (if ocean).",
-    legend:"Legend", legCrater:"Crater (~diam.)", legWave:"Tsunami reach (if ocean)",
-    rocketReadyPrefix:"Rocket ready in", victory:"Victory!", gameOver:"Game Over 💥",
-    impactEnergy:(e)=>`💥 Impact energy ≈ ${e}`
-  },
-  ln: {
-    lives:"Bomoi", score:"Score", level:"Niveau",
-    fire:"KOBƐTA 🔴 (Espace / Tap)", shield:"Bouclier 🛡️ (B)", rocket:"Rokete 🚀 (Spécial)", reset:"Kobanda lisusu ↻",
-    simTitle:"Simulásio NASA (kobengana Δv)",
-    simDesc:"Impacteur (DART) : Δv moke liboso ekoki kobenga impact.",
-    diam:"Bonene (m)", dv:"Δv (mm/s)", t:"Mikolo", test:"Kozela",
-    simNote:"Modelo ya kelasi : kobengana ≈ Δv × ntango.",
-    simResult:(miss, ok)=>`Distance ya kobeta te ≈ ${miss.toFixed(0)} km — ${ok ? "EBENGAMI ✅" : "IMPACT ❌"}`,
-    mapTitle:"Karte ya impact (kofanda na mboka)",
-    mapHint:"Toli : finá na karte mpo na simuler impact. Bilingo emonisi ~diamètre ya crater mpe tsunami soki na ebale.",
-    legend:"Légende", legCrater:"Crater (~diam.)", legWave:"Tsunami (soki ebale)",
-    rocketReadyPrefix:"Rokete ekóma na", victory:"Elonga!", gameOver:"Game Over 💥",
-    impactEnergy:(e)=>`💥 Makasi ya impact ≈ ${e}`
-  }
+  fr:{lives:"Vies",score:"Score",level:"Niveau",
+      fire:"TIR 🔴 (Espace/Tap)",shield:"Bouclier 🛡️ (B)",rocket:"Fusée 🚀 (Spécial)",reset:"Rejouer ↻",
+      mapTitle:"Carte d’impact (NASA + USGS)",mapHint:"Clique pour placer l’impact. Bleu = cratère, Jaune pointillé = tsunami. Ligne orange = Apophis 2029.",
+      simTitle:"Simulation NASA (déviation Δv) + Tsunami (éducatif)",
+      simDesc:"Impacteur cinétique (type DART). Si non évité et océanique, estimation de tsunami (éducative).",
+      diam:"Taille (m)",dv:"Δv (mm/s)",t:"Temps (jours)",
+      simNote:"Modèles éducatifs. Remplacer par solveurs validés pour publication.",
+      simResult:(miss,ok,eLabel,eta0)=>`Miss ≈ ${miss.toFixed(0)} km — ${ok?"ÉVITÉ ✅":"IMPACT ❌"}
+Énergie ≈ ${eLabel} • Amplitude initiale ≈ ${eta0.toFixed(2)} m`,
+      impactEnergy:(e)=>`💥 Énergie d’impact ≈ ${e}`},
+  en:{lives:"Lives",score:"Score",level:"Level",
+      fire:"FIRE 🔴 (Space/Tap)",shield:"Shield 🛡️ (B)",rocket:"Rocket 🚀 (Special)",reset:"Restart ↻",
+      mapTitle:"Impact & Risk Map (NASA + USGS)",mapHint:"Click to place impact. Blue = crater, Yellow dashed = tsunami. Orange = Apophis 2029.",
+      simTitle:"NASA Simulation (Δv deflection) + Tsunami (educational)",
+      simDesc:"Kinetic-impactor (DART). If not avoided and oceanic, estimate tsunami (educational).",
+      diam:"Size (m)",dv:"Δv (mm/s)",t:"Time (days)",
+      simNote:"Educational models; replace with peer-reviewed solvers for publication.",
+      simResult:(miss,ok,eLabel,eta0)=>`Miss ≈ ${miss.toFixed(0)} km — ${ok?"AVOIDED ✅":"IMPACT ❌"}
+Energy ≈ ${eLabel} • Initial wave ≈ ${eta0.toFixed(2)} m`,
+      impactEnergy:(e)=>`💥 Impact energy ≈ ${e}`},
+  ln:{lives:"Bomoi",score:"Score",level:"Niveau",
+      fire:"KOBƐTA 🔴 (Space/Tap)",shield:"Bouclier 🛡️ (B)",rocket:"Rokete 🚀 (Spécial)",reset:"Kobanda lisusu ↻",
+      mapTitle:"Karte ya Impact (NASA + USGS)",mapHint:"Finá na karte mpo na koposa impact. Bleu = crater, Jaune = tsunami. Orange = Apophis 2029.",
+      simTitle:"Simulásio (Δv) + Tsunami (eléyo)", simDesc:"Impacteur (DART). Soki ekangami te na ebale, tosomba tsunami (eléyo).",
+      diam:"Bonene (m)",dv:"Δv (mm/s)",t:"Mikolo",
+      simNote:"Modelo ya kelasi; salelá ba solveur ya etudí.",
+      simResult:(miss,ok,eLabel,eta0)=>`Distance ya kobeta te ≈ ${miss.toFixed(0)} km — ${ok?"EBENGAMI ✅":"IMPACT ❌"}
+Makasi ≈ ${eLabel} • Lopemi ya ebandeli ≈ ${eta0.toFixed(2)} m`,
+      impactEnergy:(e)=>`💥 Makasi ya impact ≈ ${e}`}
 };
-let currentLang="fr";
+let currentLang="en";
 function applyLang(){
   const t=texts[currentLang];
   document.getElementById('livesLabel').textContent=t.lives;
@@ -211,20 +180,233 @@ function applyLang(){
   document.getElementById('shieldBtn').textContent=t.shield;
   document.getElementById('rocketBtn').textContent=t.rocket;
   document.getElementById('resetBtn').textContent=t.reset;
+  document.getElementById('mapTitle').textContent=t.mapTitle;
+  document.getElementById('mapHint').textContent=t.mapHint;
   document.getElementById('simTitle').textContent=t.simTitle;
   document.getElementById('simDesc').textContent=t.simDesc;
+  document.getElementById('simNote').textContent=t.simNote;
   document.getElementById('diamLabel').textContent=t.diam;
   document.getElementById('dvLabel').textContent=t.dv;
   document.getElementById('tLabel').textContent=t.t;
-  document.getElementById('applyMitigation').textContent=t.test;
-  document.getElementById('simNote').textContent=t.simNote;
-  document.getElementById('mapTitle').textContent=t.mapTitle;
-  document.getElementById('mapHint').textContent=t.mapHint;
 }
-function setLang(lang){ currentLang = texts[lang]?lang:"fr"; applyLang(); }
+function setLang(ln){ currentLang = texts[ln]?ln:"en"; applyLang(); }
 applyLang();
 
-/* ================== Jeu minimal (identique principe, compact) ================== */
+/* ================== APOD ================== */
+(async function loadAPOD(){
+  const img = document.getElementById('apodImg');
+  const title = document.getElementById('apodTitle');
+  const explain = document.getElementById('apodExplain');
+  const link = document.getElementById('apodLink');
+  const fallback = {
+    url:"https://images.unsplash.com/photo-1444703686981-a3abbc4d4fe3?q=80&w=1600&auto=format&fit=crop",
+    title:"Space Inspiration", explain:"Fallback image (APOD unavailable)."
+  };
+  try{
+    const r = await fetch(APOD_URL,{cache:"no-store"});
+    if(!r.ok) throw new Error("APOD error");
+    const apod = await r.json();
+    const media = apod.media_type==="image" ? (apod.hdurl||apod.url) : (apod.thumbnail_url||fallback.url);
+    img.src = media; img.alt = apod.title||"APOD";
+    title.textContent = apod.title || "Astronomy Picture of the Day";
+    explain.textContent = apod.explanation ? (apod.explanation.slice(0,140)+"…") : "";
+    link.href = apod.hdurl || apod.url || media;
+  }catch(e){
+    img.src=fallback.url; img.alt=fallback.title; title.textContent=fallback.title; explain.textContent=fallback.explain; link.href=fallback.url;
+  }
+})();
+
+/* ================== MAP (Leaflet) ================== */
+let map, impactMarker, craterCircle, tsunamiCircle;
+function initMap(){
+  map = L.map('map',{zoomControl:true, worldCopyJump:true}).setView([5,15],3);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap'}).addTo(map);
+  // USGS topo overlay (visual context)
+  L.tileLayer('https://basemap.nationalmap.gov/arcgis/rest/services/USGSTopo/MapServer/tile/{z}/{y}/{x}',{
+    maxZoom:19, opacity:0.55, attribution:'USGS Topo'
+  }).addTo(map);
+
+  // Legend
+  const legend=L.control({position:'topright'}); legend.onAdd=function(){
+    const div=L.DomUtil.create('div','legend');
+    div.innerHTML = `<b>Legend</b><br>
+      <span style="display:inline-block;width:10px;height:10px;background:#3b82f6;border:1px solid #fff"></span> Crater (~diam.)<br>
+      <span style="display:inline-block;width:10px;height:10px;background:#f6c453;border:1px solid #fff"></span> Tsunami reach<br>
+      <span style="display:inline-block;width:12px;height:3px;background:#ff6a00;display:inline-block"></span> Apophis (approx)`;
+    return div;
+  }; legend.addTo(map);
+
+  map.on('click', e=> placeImpact(e.latlng));
+  placeImpact({lat:0,lng:0});
+  drawApophisApproxPath(); // orange + animation
+}
+function placeImpact(latlng){
+  const d_m=parseFloat(diamEl.value)||300;
+  const v_kms=parseFloat(velEl.value)||20;
+  const h_m=parseFloat(depthEl.value)||4000;
+
+  const EJ = energyJ(d_m, v_kms);
+  const Emt = EJ/4.184e15;
+  const crater_km = estimateCraterKm(Emt);
+  const eta0 = initialWaveAmplitude(d_m, v_kms, h_m); // m
+  const wave_km = tsunamiReachKm(eta0); // simple reach proxy
+
+  if(impactMarker) map.removeLayer(impactMarker);
+  if(craterCircle) map.removeLayer(craterCircle);
+  if(tsunamiCircle) map.removeLayer(tsunamiCircle);
+
+  impactMarker = L.marker(latlng).addTo(map).bindPopup(
+    `<b>Impact</b><br>${latlng.lat.toFixed(3)}, ${latlng.lng.toFixed(3)}<br>
+     Energy: ${tntLabel(EJ)}<br>
+     Crater ≈ ${crater_km.toFixed(1)} km<br>
+     Initial wave ≈ ${eta0.toFixed(2)} m`
+  ).openPopup();
+  craterCircle = L.circle(latlng,{radius: crater_km*1000, color:"#3b82f6", weight:2, fill:false}).addTo(map);
+  tsunamiCircle = L.circle(latlng,{radius: wave_km*1000, color:"#ffee66", weight:2, dashArray:"6 6", fill:false}).addTo(map);
+}
+
+/* ===== Apophis 2029 (approx ground track + small animated marker) ===== */
+function drawApophisApproxPath(){
+  // Simple illustrative great-circle-ish path (educational)
+  const coords = [
+    [-55,-150], [-35,-110], [-10,-60], [10,-20],
+    [25,20], [40,60], [55,120]
+  ];
+  const line = L.polyline(coords,{color:'#ff6a00',weight:3,opacity:.95}).addTo(map)
+    .bindPopup(`<b>Apophis 2029</b><br>Orange line: illustrative ground track (educational).<br>See NASA CAD for closest approach params.`);
+  // animated dot
+  const dot = L.circleMarker(coords[0],{radius:5,color:'#fff',fillColor:'#ff6a00',fillOpacity:1}).addTo(map);
+  let i=0, dir=1;
+  setInterval(()=>{
+    i += dir;
+    if(i>=coords.length-1 || i<=0) dir*=-1;
+    dot.setLatLng(coords[i]);
+  }, 600);
+}
+
+/* ================== Tsunami & Impact MODELS (educational) ================== */
+function energyJ(d_m, v_kms, rho=3000){
+  const r=d_m/2; const V=4/3*Math.PI*r**3; const m=V*rho; const v=v_kms*1000;
+  return 0.5*m*v*v; // Joules
+}
+function tntLabel(J){
+  const tnt_per_ton=4.184e9, tons=J/tnt_per_ton;
+  if(tons<1e3) return `${tons.toFixed(0)} t TNT`;
+  if(tons<1e6) return `${(tons/1e3).toFixed(1)} kt TNT`;
+  return `${(tons/1e6).toFixed(2)} Mt TNT`;
+}
+// Crater (very rough scaling from energy)
+function estimateCraterKm(E_Mt){
+  // keeps results in sensible educational range
+  return Math.max(1, 0.09 * Math.cbrt(E_Mt) * 100/100);
+}
+// Initial wave amplitude near source (very simplified Ward & Asphaug-like scaling)
+function initialWaveAmplitude(d_m, v_kms, h_m){
+  // scale with (momentum)^(1/3) and inverse with depth^(1/2)
+  const r = d_m/2;            // m
+  const m = (4/3)*Math.PI*r**3*3000; // kg
+  const p = m*(v_kms*1000);   // kg·m/s
+  const A0 = 0.8 * Math.cbrt(p) / Math.sqrt(Math.max(100, h_m)); // meters
+  return Math.max(0.1, Math.min(A0, 80)); // clamp 0.1..80 m
+}
+// Far-field decay in deep water ~ R^-3/2, pick a reference R0 = 2h
+function waveAtDistance(eta0, R_km, h_m){
+  const R0 = Math.max(1, 2*h_m/1000); // km
+  return eta0 * Math.pow(R0/Math.max(R_km,R0), 1.5);
+}
+// "Reach" proxy where deep-water amplitude falls below ~0.1 m
+function tsunamiReachKm(eta0){
+  let R=10;
+  while(R<2000 && waveAtDistance(eta0,R,4000)>0.1) R+=10;
+  return R;
+}
+
+/* ================== DEFLECTION & TSUNAMI CHART ================== */
+const diamEl = document.getElementById('diam');
+const velEl  = document.getElementById('vel');
+const depthEl= document.getElementById('depth');
+const dvEl   = document.getElementById('dv');
+const daysEl = document.getElementById('days');
+const diamOut= document.getElementById('diamOut');
+const velOut = document.getElementById('velOut');
+const depthOut=document.getElementById('depthOut');
+const dvOut  = document.getElementById('dvOut');
+const daysOut= document.getElementById('daysOut');
+[diamEl,velEl,depthEl,dvEl,daysEl].forEach(el=>{
+  el.addEventListener('input',()=>{
+    diamOut.textContent=diamEl.value;
+    velOut.textContent=parseFloat(velEl.value).toFixed(1);
+    depthOut.textContent=depthEl.value;
+    dvOut.textContent=parseFloat(dvEl.value).toFixed(1);
+    daysOut.textContent=daysEl.value;
+    simulate(false);
+  });
+});
+
+let chartTsunami;
+function buildChart(){
+  const ctx=document.getElementById('chartTsunami');
+  chartTsunami=new Chart(ctx,{
+    type:'line',
+    data:{labels:[],datasets:[{label:'Wave height (m)',data:[],tension:0.25}]},
+    options:{responsive:true,plugins:{legend:{display:true}},
+      scales:{x:{title:{display:true,text:'Distance from impact (km)'}}, y:{title:{display:true,text:'Height (m)'}}}
+    }
+  });
+}
+function simulate(showText=true){
+  const t=texts[currentLang];
+  const d = parseFloat(diamEl.value);
+  const v = parseFloat(velEl.value);
+  const h = parseFloat(depthEl.value);
+  const T = parseFloat(daysEl.value);
+  const dv = parseFloat(dvEl.value);
+
+  // Deflection (educational): miss ≈ Δv * time
+  const miss_km = (dv/1e6) * (T*24*3600); // km
+  const avoided = miss_km > 0; // pedagogical flag
+
+  // Energy & initial wave
+  const EJ = energyJ(d, v);
+  const eta0 = initialWaveAmplitude(d, v, h);
+
+  if(showText){
+    document.getElementById('simOut').textContent = t.simResult(miss_km, avoided, tntLabel(EJ), eta0);
+  }
+
+  // Chart tsunami: 10..1000 km
+  const Rs = [10,25,50,100,200,400,600,800,1000];
+  const Hs = Rs.map(R=> waveAtDistance(eta0,R,h));
+  chartTsunami.data.labels = Rs;
+  chartTsunami.data.datasets[0].data = Hs.map(x=> +x.toFixed(2));
+  chartTsunami.update();
+
+  // If avoided, clear map rings; else draw at map center
+  if(avoided){
+    if(impactMarker){ map.removeLayer(impactMarker); impactMarker=null; }
+    if(craterCircle){ map.removeLayer(craterCircle); craterCircle=null; }
+    if(tsunamiCircle){ map.removeLayer(tsunamiCircle); tsunamiCircle=null; }
+  }else{
+    const Emt = EJ/4.184e15;
+    const crater_km = estimateCraterKm(Emt);
+    const center = map.getCenter();
+    if(impactMarker) map.removeLayer(impactMarker);
+    if(craterCircle) map.removeLayer(craterCircle);
+    if(tsunamiCircle) map.removeLayer(tsunamiCircle);
+    impactMarker = L.marker(center).addTo(map).bindPopup(
+      `<b>Impact (sim)</b><br>${center.lat.toFixed(3)}, ${center.lng.toFixed(3)}<br>
+       Energy: ${tntLabel(EJ)}<br>
+       Crater ≈ ${crater_km.toFixed(1)} km<br>
+       Wave₀ ≈ ${eta0.toFixed(2)} m`
+    ).openPopup();
+    craterCircle = L.circle(center,{radius: crater_km*1000, color:"#3b82f6", weight:2, fill:false}).addTo(map);
+    const reach = tsunamiReachKm(eta0);
+    tsunamiCircle = L.circle(center,{radius: reach*1000, color:"#ffee66", weight:2, dashArray:"6 6", fill:false}).addTo(map);
+  }
+}
+document.getElementById('applyMitigation').onclick=()=>simulate(true);
+
+/* ================== MINI-GAME (condensed) ================== */
 const canvas=document.getElementById('game'), c=canvas.getContext('2d');
 const W=canvas.width, H=canvas.height;
 const earth={x:W/2,y:H-50,r:30};
@@ -234,7 +416,7 @@ let rocket={active:false,x:0,y:0,vy:-320,cooldown:0};
 let lastTime=0, earthAngle=0;
 const uiLives=document.getElementById('lives'), uiScore=document.getElementById('score'), uiLevel=document.getElementById('level'), fact=document.getElementById('fact');
 
-function showTip(t,ms=2500){ fact.textContent=t; fact.hidden=false; setTimeout(()=>fact.hidden=true,ms); }
+function showTip(t,ms=2200){ fact.textContent=t; fact.hidden=false; setTimeout(()=>fact.hidden=true,ms); }
 function reset(){ lives=3;score=0;level=1;uiLives.textContent=lives;uiScore.textContent=score;uiLevel.textContent=level; bullets=[];asteroids=[];running=true;spawnWave(); }
 function spawnWave(){ asteroids=[]; for(let i=0;i<6+level*2;i++){ asteroids.push({x:Math.random()*W,y:-Math.random()*H-20,r:10+Math.random()*12,hp:1+Math.floor(level/2),speed:70+Math.random()*70}); } }
 function fire(){ if(!running) return; bullets.push({x:earth.x,y:earth.y-earth.r-6,vy:-560}); }
@@ -267,117 +449,32 @@ function draw(){
   c.clearRect(0,0,W,H);
   // stars
   for(let i=0;i<100;i++){ const x=(i*97)%W,y=(i*57)%H; c.fillStyle=i%7===0?"#99aaff":"#5560aa"; c.fillRect(x,y,2,2); }
-  // earth
+  // earth (stylized)
   const r=earth.r; c.save(); c.translate(earth.x,earth.y);
   c.beginPath(); c.arc(0,0,r+11,0,Math.PI*2); c.strokeStyle="rgba(120,200,255,.35)"; c.lineWidth=9; c.stroke();
   const g=c.createRadialGradient(-r*.3,-r*.35,r*.2,0,0,r); g.addColorStop(0,"#17b0ff"); g.addColorStop(.6,"#0a76c4"); g.addColorStop(1,"#06335e"); c.fillStyle=g; c.beginPath(); c.arc(0,0,r,0,Math.PI*2); c.fill();
   c.rotate(earthAngle); c.fillStyle="#5ac16b"; c.beginPath(); c.moveTo(-r*.25,-r*.15); c.bezierCurveTo(-r*.05,-r*.35,r*.25,-r*.30,r*.20,-r*.05); c.bezierCurveTo(r*.35,r*.15,r*.10,r*.35,-r*.05,r*.25); c.bezierCurveTo(-r*.20,r*.15,-r*.35,0,-r*.25,-r*.05); c.closePath(); c.fill(); c.restore();
   if(shield.active){ c.save(); c.strokeStyle="#58ffa4"; c.lineWidth=4; c.beginPath(); c.arc(earth.x,earth.y,r+12,0,Math.PI*2); c.stroke(); c.restore(); }
+  // bullets / rocket
   c.fillStyle="#ff3b30"; bullets.forEach(b=>c.fillRect(b.x-3,b.y-10,6,12));
   if(rocket.active){ c.fillStyle="#ffd54d"; c.fillRect(rocket.x-4,rocket.y-10,8,20); c.fillStyle="#ff6e40"; c.fillRect(rocket.x-3,rocket.y+10,6,8); }
+  // asteroids
   for(const a of asteroids){ const gg=c.createRadialGradient(a.x-3,a.y-3,2,a.x,a.y,a.r); gg.addColorStop(0,"#c7a47a"); gg.addColorStop(1,"#6b5136"); c.fillStyle=gg; c.beginPath(); c.arc(a.x,a.y,a.r,0,Math.PI*2); c.fill(); }
 }
 function loop(ts){ if(!lastTime) lastTime=ts; let dt=(ts-lastTime)/1000; if(dt<=0) dt=1/60; if(dt>0.033) dt=0.033; lastTime=ts; update(dt); draw(); if(running) requestAnimationFrame(loop); }
-reset(); requestAnimationFrame(loop);
 
-/* ================== Simulation ↔ Carte ================== */
-const diamEl=document.getElementById('diam'), dvEl=document.getElementById('dv'), daysEl=document.getElementById('days');
-const diamOut=document.getElementById('diamOut'), dvOut=document.getElementById('dvOut'), daysOut=document.getElementById('daysOut');
-[diamEl,dvEl,daysEl].forEach(el=>el.addEventListener('input',()=>{ diamOut.textContent=diamEl.value; dvOut.textContent=parseFloat(dvEl.value).toFixed(1); daysOut.textContent=daysEl.value; }));
-
-// carte
-const map=L.map('map',{zoomControl:true}).setView([0,20],3);
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OpenStreetMap'}).addTo(map);
-let impactMarker=null, craterLayer=null, waveLayer=null;
-const legend = L.control({position:'topright'});
-legend.onAdd = function(){
-  const div = L.DomUtil.create('div','legend');
-  div.innerHTML = `<b id="legTitle">${texts[currentLang].legend}</b><br>
-    <span style="display:inline-block;width:10px;height:10px;background:#3b82f6;border:1px solid #fff"></span>
-    <span id="legCrater">${texts[currentLang].legCrater}</span><br>
-    <span style="display:inline-block;width:10px;height:10px;background:#f6c453;border:1px solid #fff"></span>
-    <span id="legWave">${texts[currentLang].legWave}</span>`;
-  return div;
-};
-legend.addTo(map);
-
-// conversion simple km → degrés (~latitude)
-function kmToDeg(km){ return km / 111; }
-
-// estimation énergie & tailles (éducatif)
-function energyJ(d_m, v_kms){
-  const r=d_m/2, rho=3000, vol=4/3*Math.PI*r*r*r, m=vol*rho, v=v_kms*1000;
-  return 0.5*m*v*v;
+/* ================== INIT ================== */
+let diamOutEl=diamOut, velOutEl=velOut, depthOutEl=depthOut, dvOutEl=dvOut, daysOutEl=daysOut;
+function init(){
+  initMap();
+  buildChart();
+  diamOutEl.textContent=diamEl.value; velOutEl.textContent=parseFloat(velEl.value).toFixed(1);
+  depthOutEl.textContent=depthEl.value; dvOutEl.textContent=parseFloat(dvEl.value).toFixed(1);
+  daysOutEl.textContent=daysEl.value;
+  simulate(true);
+  reset(); requestAnimationFrame(loop);
 }
-function tntLabel(J){
-  const tnt_per_ton=4.184e9, tons=J/tnt_per_ton;
-  if(tons<1e3) return `${tons.toFixed(0)} t TNT`;
-  if(tons<1e6) return `${(tons/1e3).toFixed(1)} kt TNT`;
-  return `${(tons/1e6).toFixed(2)} Mt TNT`;
-}
-function craterAndWaveKm(E_Mt){
-  // modèles très simplifiés, uniquement pédagogiques
-  const crater = Math.max(1, 0.07 * Math.cbrt(E_Mt) * 100/100); // ~quelques km
-  const wave = crater * 4; // portée tsunami si océan
-  return {crater, wave};
-}
-// place / met à jour les cercles
-function drawImpact(lat,lng, crater_km, wave_km, popupText){
-  if(impactMarker) map.removeLayer(impactMarker);
-  if(craterLayer) map.removeLayer(craterLayer);
-  if(waveLayer) map.removeLayer(waveLayer);
-  impactMarker = L.marker([lat,lng]).addTo(map).bindPopup(popupText).openPopup();
-  craterLayer = L.circle([lat,lng], {radius: crater_km*1000, color:"#3b82f6", weight:2, fill:false}).addTo(map);
-  waveLayer   = L.circle([lat,lng], {radius: wave_km*1000, color:"#f6c453", weight:2, dashArray:"6 6", fill:false}).addTo(map);
-  map.panTo([lat,lng]);
-}
-// click manuel
-map.on('click', e=>{
-  const d=parseFloat(diamEl.value), v=15; // vitesse par défaut si click direct
-  const EJ=energyJ(d,v), Emt=(EJ/4.184e15); // J → Mt TNT
-  const {crater, wave}=craterAndWaveKm(Emt);
-  const t=texts[currentLang];
-  drawImpact(e.latlng.lat, e.latlng.lng, crater, wave,
-    `<b>${t.legend}</b><br>Crater ≈ ${crater.toFixed(1)} km<br>Tsunami ≈ ${wave.toFixed(1)} km`);
-});
-
-// lier le bouton "Tester" à la carte
-document.getElementById('applyMitigation').onclick = ()=>{
-  const t=texts[currentLang];
-  const T = parseInt(daysEl.value,10)*24*3600;              // s
-  const dv_mm_s = parseFloat(dvEl.value);
-  const dv_km_s = dv_mm_s/1e6;                              // km/s
-  const base_miss = 0;                                      // hypothèse: trajectoire collision
-  const new_miss = base_miss + dv_km_s*T;                   // km (pédago)
-  const ok = new_miss > 0.0;                                // >0 => évité
-  document.getElementById('simOut').textContent = t.simResult(new_miss, ok);
-
-  if(ok){
-    // impact évité ⇒ efface les couches
-    if(impactMarker){ map.removeLayer(impactMarker); impactMarker=null; }
-    if(craterLayer){ map.removeLayer(craterLayer); craterLayer=null; }
-    if(waveLayer){ map.removeLayer(waveLayer); waveLayer=null; }
-  }else{
-    // impact ⇒ calcule énergie & dessine au centre actuel de la carte
-    const d=parseFloat(diamEl.value), v=15; // vitesse typique si inconnue (km/s)
-    const EJ=energyJ(d,v), Emt=(EJ/4.184e15);
-    const {crater, wave}=craterAndWaveKm(Emt);
-    const center=map.getCenter();
-    drawImpact(center.lat, center.lng, crater, wave,
-      `<b>Impact</b><br>${center.lat.toFixed(3)}, ${center.lng.toFixed(3)}<br>
-       Énergie: ${tntLabel(EJ)}<br>Crater ≈ ${crater.toFixed(1)} km<br>Tsunami ≈ ${wave.toFixed(1)} km`);
-    showTip(texts[currentLang].impactEnergy(tntLabel(EJ)), 2500);
-  }
-};
-
-// mettre à jour les libellés de légende quand la langue change
-const _setLang=setLang;
-setLang=(ln)=>{ _setLang(ln);
-  document.getElementById('legTitle').textContent = texts[currentLang].legend;
-  document.getElementById('legCrater').textContent = texts[currentLang].legCrater;
-  document.getElementById('legWave').textContent = texts[currentLang].legWave;
-};
-
+init();
 </script>
 </body>
 </html>
